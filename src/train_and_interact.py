@@ -13,5 +13,7 @@ trainer.train('chatterbot.corpus.ubuntu')
 # Interaction loop
 while True:
     user_input = input("You: ")
+    if user_input.lower() in ['exit', 'quit']:
+        break
     response = chatbot.get_response(user_input)
     print("UbuntuBot:", response)
