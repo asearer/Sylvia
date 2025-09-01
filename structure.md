@@ -1,21 +1,13 @@
-sylvia/
-│
-├── data/
-│   ├── conversations/
-│   │   ├── conversation1.txt
-│   │   ├── conversation2.txt
-│   │   └── ...
-│   └── ...
-│
-├── models/
-│   └── trained_model.pkl
-│
-├── src/
-│   ├── __init__.py
-│   ├── chatbot.py
-│   ├── data_processing.py
-│   └── train_chatbot.py
-│
-├── requirements.txt
-│
-└── README.md
+src/
+ ├─ bot/
+ │   ├─ __init__.py
+ │   ├─ sylvia.py       # ChatBot class + trainer
+ │   └─ trainer.py      # Training scripts
+ ├─ interface/
+ │   ├─ cli.py          # Command-line interaction
+ │   └─ web.py          # Optional web interface
+ └─ main.py             # Entry point to run Sylvia
+models/
+ └─ trained_sylvia_model.pkl
+data/
+ └─ custom_corpus.yml   # Optional for training
