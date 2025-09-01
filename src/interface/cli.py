@@ -4,8 +4,8 @@ cli.py
 Provides a command-line interface for interacting with SylviaBot.
 """
 
-from bot.sylvia import SylviaBot
-from bot.trainer import save_conversation_to_yaml
+from src.bot.sylvia import SylviaBot
+from src.bot.trainer import save_conversation_to_yaml
 
 def start_cli(model_path=None):
     """

@@ -5,7 +5,7 @@ Entry point for SylviaBot. Allows selection between CLI and API interface.
 """
 
 import argparse
-from interface import cli
+from src.interface import cli
 import uvicorn
 
 if __name__ == "__main__":
@@ -17,4 +17,4 @@ if __name__ == "__main__":
     if args.mode == "cli":
         cli.start_cli(model_path=args.model)
     elif args.mode == "api":
-        uvicorn.run("interface.api:app", host="0.0.0.0", port=8000, reload=True)
+        uvicorn.run("src.interface.api:app", host="0.0.0.0", port=8000, reload=True)

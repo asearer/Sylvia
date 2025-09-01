@@ -7,7 +7,7 @@ multi-user interaction.
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from bot.sylvia import SylviaBot
+from src.bot.sylvia import SylviaBot
 
 app = FastAPI(title="Sylvia Chatbot API")
 

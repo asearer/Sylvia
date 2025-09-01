@@ -1,18 +1,6 @@
 # src/data_processing.py
 
 def preprocess_data(data):
-    processed_data = []
-    for conversation in data:
-        # Placeholder preprocessing steps
-        processed_conversation = []
-        for message in conversation:
-            # Tokenization, lowercasing, etc.
-            processed_message = message.lower().split()
-            processed_conversation.append(processed_message)
-        processed_data.append(processed_conversation)
-    return processed_data
-
-def preprocess_data(data):
     """
     Preprocesses the given data, which is assumed to be a list of conversations, 
     where each conversation is a list of messages.
