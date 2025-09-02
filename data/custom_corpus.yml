@@ -1,0 +1,44 @@
+categories:
+  greetings:
+    - "hello"
+    - "hi"
+    - "hey"
+    - "good morning"
+    - "good evening"
+
+  farewells:
+    - "bye"
+    - "goodbye"
+    - "see you"
+    - "see you later"
+
+  gratitude:
+    - "thank you"
+    - "thanks"
+    - "thx"
+
+  questions:
+    - "how are you"
+    - "what's up"
+    - "how's it going"
+
+responses:
+  greetings:
+    - "Hello! How can I help you today?"
+    - "Hi there! Nice to see you."
+    - "Hey! What's up?"
+
+  farewells:
+    - "Goodbye! Have a great day."
+    - "See you later!"
+    - "Bye! Take care."
+
+  gratitude:
+    - "You're welcome!"
+    - "No problem!"
+    - "Anytime!"
+
+  questions:
+    - "I'm doing well, thank you! How about you?"
+    - "All good here! How are you?"
+    - "I'm fine! What about you?"
