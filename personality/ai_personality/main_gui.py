@@ -1,62 +1,171 @@
 """
-GUI-based chat interface with live plots using PersonalityGUIVisualizer.
+main_gui.py
+
+Fully GUI-only chat interface with live plots using PersonalityGUIVisualizer.
+Side-by-side layout: visualization + chat, with instant updates.
 """
 
-from ai_personality.personality import Personality
-from ai_personality.visualizer_gui import PersonalityGUIVisualizer
-import threading
+import sys
+import os
+import tkinter as tk
+from tkinter import simpledialog, messagebox, scrolledtext
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import io
+from pathlib import Path
 
-persona = Personality("astronaut", evolving=True)
-visualizer = PersonalityGUIVisualizer(persona)
+# Add ai_personality to sys.path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__)))
 
-# Start GUI animation in a separate thread
-threading.Thread(target=visualizer.start, daemon=True).start()
+from personality.personality import Personality
+from personality.visualizer_gui import PersonalityGUIVisualizer
 
-print("Commands: /switch [name], /hybrid [name:weight,...], quit")
-print("Graphical visualization of personality state is live.")
+class PersonalityChatApp:
+    def __init__(self, master):
+        self.master = master
+        master.title("Sylvia Chatbot")
 
-while True:
-    user_input = input("You: ")
+        # Locate profiles.json relative to this file
+        profiles_path = Path(__file__).parent / "personality" / "profiles.json"
 
-    if user_input.lower().startswith("/switch"):
-        parts = user_input.split()
-        if len(parts) > 1:
+        # Initialize personality and visualizer
+        self.persona = Personality("astronaut", profiles_path=profiles_path, evolving=True)
+        self.visualizer = PersonalityGUIVisualizer(self.persona)
+
+        # Main frame for side-by-side layout
+        main_frame = tk.Frame(master)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left frame: Visualization
+        viz_frame = tk.Frame(main_frame)
+        viz_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.canvas = FigureCanvasTkAgg(self.visualizer.fig, master=viz_frame)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.canvas.draw()
+
+        # Right frame: Chat interface
+        chat_frame = tk.Frame(main_frame)
+        chat_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.chat_window = scrolledtext.ScrolledText(chat_frame, wrap=tk.WORD, width=50, height=20, state=tk.DISABLED)
+        self.chat_window.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+
+        # Input frame
+        input_frame = tk.Frame(chat_frame)
+        input_frame.pack(padx=5, pady=5, fill=tk.X)
+
+        self.input_box = tk.Entry(input_frame)
+        self.input_box.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0,5))
+        self.input_box.bind("<Return>", self.send_message)
+
+        self.send_btn = tk.Button(input_frame, text="Send", command=self.send_message)
+        self.send_btn.pack(side=tk.LEFT)
+
+        # Buttons for personality actions
+        control_frame = tk.Frame(chat_frame)
+        control_frame.pack(pady=5)
+
+        self.switch_btn = tk.Button(control_frame, text="Switch Personality", command=self.switch_personality)
+        self.switch_btn.pack(side=tk.LEFT, padx=5)
+
+        self.hybrid_btn = tk.Button(control_frame, text="Weighted Hybrid", command=self.set_hybrid)
+        self.hybrid_btn.pack(side=tk.LEFT, padx=5)
+
+        # Feedback buttons
+        self.feedback_frame = tk.Frame(chat_frame)
+        self.feedback_frame.pack(pady=5)
+
+        self.positive_fb = tk.Button(self.feedback_frame, text="👍", command=lambda: self.send_feedback(1))
+        self.positive_fb.pack(side=tk.LEFT, padx=5)
+        self.negative_fb = tk.Button(self.feedback_frame, text="👎", command=lambda: self.send_feedback(-1))
+        self.negative_fb.pack(side=tk.LEFT, padx=5)
+
+        # Last message tracking for feedback
+        self.last_user_message = None
+        self.last_bot_response = None
+
+        # Keyboard shortcut to quit
+        master.bind("<Escape>", lambda e: master.quit())
+
+        # Initial visualization update
+        self.update_visualizer()
+
+    def append_chat(self, speaker, message):
+        self.chat_window.config(state=tk.NORMAL)
+        self.chat_window.insert(tk.END, f"{speaker}: {message}\n")
+        self.chat_window.config(state=tk.DISABLED)
+        self.chat_window.see(tk.END)
+
+    def send_message(self, event=None):
+        user_msg = self.input_box.get().strip()
+        if not user_msg:
+            return
+        self.append_chat("You", user_msg)
+        self.input_box.delete(0, tk.END)
+
+        # Silence internal debug prints
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            bot_response = self.persona.chat(user_msg)
+        finally:
+            sys.stdout = old_stdout
+
+        self.append_chat(", ".join(self.persona.active_profiles) + " AI", bot_response)
+
+        self.last_user_message = user_msg
+        self.last_bot_response = bot_response
+
+        self.update_visualizer()
+
+    def send_feedback(self, feedback_value):
+        if self.last_user_message and self.last_bot_response:
+            self.persona._automatic_evolution(self.last_user_message, self.last_bot_response, feedback_value)
+            self.persona.save()
+            self.update_visualizer()
+            self.append_chat("System", "Feedback recorded ✅")
+        else:
+            messagebox.showinfo("Info", "Send a message before giving feedback.")
+
+    def switch_personality(self):
+        new_profile = simpledialog.askstring("Switch Personality", "Enter new personality profile name:")
+        if new_profile:
             try:
-                persona.switch_personality(parts[1])
-                print(f"Switched to {parts[1]}")
+                self.persona.switch_personality(new_profile)
+                self.update_visualizer()
+                self.append_chat("System", f"Switched to {new_profile}")
             except ValueError as e:
-                print(e)
-        visualizer.update_history()
-        continue
+                messagebox.showerror("Error", str(e))
 
-    if user_input.lower().startswith("/hybrid"):
-        parts = user_input.split()
-        if len(parts) > 1:
+    def set_hybrid(self):
+        weights_input = simpledialog.askstring(
+            "Weighted Hybrid",
+            "Enter weights as Name:Weight, comma-separated (e.g., astronaut:0.7,chef:0.3):"
+        )
+        if weights_input:
             weights = {}
-            for pair in parts[1].split(","):
+            for pair in weights_input.split(","):
                 try:
                     name, w = pair.split(":")
-                    weights[name] = float(w)
+                    weights[name.strip()] = float(w)
                 except:
-                    print(f"Invalid format: {pair}. Use Name:Weight")
+                    messagebox.showerror("Error", f"Invalid format: {pair}")
+                    return
             try:
-                persona.set_weighted_hybrid(weights)
-                print(f"Weighted hybrid active: {', '.join([f'{k}({v})' for k,v in weights.items()])}")
+                self.persona.set_weighted_hybrid(weights)
+                self.update_visualizer()
+                self.append_chat("System", f"Weighted hybrid active: {', '.join([f'{k}({v})' for k,v in weights.items()])}")
             except ValueError as e:
-                print(e)
-        visualizer.update_history()
-        continue
+                messagebox.showerror("Error", str(e))
 
-    if user_input.lower() in ["quit", "exit"]:
-        break
+    def update_visualizer(self):
+        self.visualizer.update_history()
+        self.canvas.draw()
 
-    response = persona.chat(user_input)
-    print(f"{', '.join(persona.active_profiles)} AI:", response)
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PersonalityChatApp(root)
+    root.mainloop()
 
-    fb = input("Feedback (+/-/enter to skip): ")
-    feedback = 1 if fb == "+" else -1 if fb == "-" else None
-    if feedback:
-        persona._automatic_evolution(user_input, response, feedback)
-        persona.save()
 
-    visualizer.update_history()
+
