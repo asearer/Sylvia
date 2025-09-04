@@ -14,7 +14,8 @@ from pathlib import Path
 from collections import Counter, defaultdict
 from random import random
 from textblob import TextBlob
-from langchain.chat_models import ChatOpenAI
+# NOTE: The following LLM initialization is commented out for local testing/development.
+# from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationChain
 
@@ -48,7 +49,7 @@ class Personality:
         self.interactions = 0
 
         # LangChain and utilities
-        self.llm = ChatOpenAI(model=model)
+        self.llm = None  # Placeholder for local testing
         self.memory = CustomMemory()
         self.rewriter = StyleRewriter(model=model)
 
@@ -127,7 +128,10 @@ class Personality:
         return hybrid
 
     def _build_chain(self):
-        """Build the conversation chain with LangChain."""
+        """Build the conversation chain with LangChain or mock for local testing."""
+        if self.llm is None:
+            # MOCK: For local testing, do not build a real chain
+            return None
         traits_template = (
             f"Tone: {self.profile.get('tone', '')}\n"
             f"Quirks: {self.profile.get('quirks', '')}\n"
@@ -152,35 +156,32 @@ AI:"""
     def chat(self, user_input: str, feedback: int = None) -> str:
         """
         Generate a response with personality, style, and evolution.
-
-        Args:
-            user_input (str): Input text from user
-            feedback (int, optional): +1 or -1 feedback
-
-        Returns:
-            str: AI response
         """
         if not self.greeted and self.profile.get("greeting"):
             self.greeted = True
             return self.profile["greeting"]
 
-        # Dynamic weight adjustment
         self._adjust_weights(user_input)
 
-        # Generate neutral response
-        neutral_response = self.chain.predict(input=user_input)
+        # MOCK: For local testing, return a canned or echo response if no LLM
+        if self.llm is None or self.chain is None:
+            neutral_response = f"[MOCK RESPONSE] You said: {user_input}"
+        else:
+            neutral_response = self.chain.predict(input=user_input)
 
-        # Track words/phrases for evolution
         self.bot_history_phrases.update([neutral_response.lower()])
         self.history_words.update([w.strip(".,!?").lower() for w in user_input.split()])
-
-        # Emergent micro-personalities
         self._generate_micro_personality(user_input, neutral_response)
 
-        # Style rewriting
-        styled_response = self.rewriter.rewrite(neutral_response, self.profile)
+        # Style rewriting (mocked if no LLM)
+        if hasattr(self, 'rewriter') and self.rewriter and hasattr(self.rewriter, 'rewrite'):
+            try:
+                styled_response = self.rewriter.rewrite(neutral_response, self.profile)
+            except Exception:
+                styled_response = neutral_response
+        else:
+            styled_response = neutral_response
 
-        # Automatic evolution
         self._automatic_evolution(user_input, styled_response, feedback)
         self.save()
         return styled_response

@@ -3,19 +3,19 @@ Style rewriter module for personality-specific phrasing.
 Rewrites AI responses according to personality traits.
 """
 
-from langchain.chat_models import ChatOpenAI
+# NOTE: The following LLM initialization is commented out for local testing/development.
+# from langchain_community.chat_models import ChatOpenAI
+# self.llm = ChatOpenAI(model=model)
+# self.llm = None  # Placeholder for local testing
 
 class StyleRewriter:
     """Rewrites AI responses to align with personality traits."""
 
     def __init__(self, model="gpt-3.5-turbo"):
-        """
-        Initialize StyleRewriter with a specific LLM.
-
-        Args:
-            model (str): Model name for LangChain LLM
-        """
-        self.llm = ChatOpenAI(model=model)
+        # NOTE: The following LLM initialization is commented out for local testing/development.
+        # from langchain_community.chat_models import ChatOpenAI
+        # self.llm = ChatOpenAI(model=model)
+        self.llm = None  # Placeholder for local testing
 
     def rewrite(self, text: str, personality_profile: dict) -> str:
         """

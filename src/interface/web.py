@@ -59,21 +59,52 @@ async def index(request: Request):
 async def chat(request: Request, user_input: str = Form(...)):
     """
     Handle user input submitted from the web form and generate bot response.
-
-    Args:
-        request (Request): FastAPI request object.
-        user_input (str): User's message from form submission.
-
-    Returns:
-        TemplateResponse: Renders 'chat.html' template including the new message.
     """
+    # Handle special commands
+    if user_input.lower().startswith("/switch"):
+        parts = user_input.split()
+        if len(parts) > 1:
+            bot.switch_personality(parts[1])
+            response = f"Switched to {parts[1]}"
+            chat_history.append({"user": user_input, "bot": response})
+            return templates.TemplateResponse(
+                "chat.html",
+                {
+                    "request": request,
+                    "messages": chat_history
+                }
+            )
+    if user_input.lower().startswith("/hybrid"):
+        parts = user_input.split()
+        if len(parts) > 1:
+            weights = {}
+            for pair in parts[1].split(","):
+                try:
+                    name, w = pair.split(":")
+                    weights[name] = float(w)
+                except:
+                    response = f"Invalid format: {pair}. Use Name:Weight"
+                    chat_history.append({"user": user_input, "bot": response})
+                    return templates.TemplateResponse(
+                        "chat.html",
+                        {
+                            "request": request,
+                            "messages": chat_history
+                        }
+                    )
+            bot.set_weighted_hybrid(weights)
+            response = f"Weighted hybrid active: {', '.join([f'{k}({v})' for k,v in weights.items()])}"
+            chat_history.append({"user": user_input, "bot": response})
+            return templates.TemplateResponse(
+                "chat.html",
+                {
+                    "request": request,
+                    "messages": chat_history
+                }
+            )
     # Generate bot response using SylviaBot
     response = bot.get_response(user_input)
-
-    # Append the conversation pair to the in-memory chat history
     chat_history.append({"user": user_input, "bot": response})
-
-    # Render the template with updated message history
     return templates.TemplateResponse(
         "chat.html",
         {

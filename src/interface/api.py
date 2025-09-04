@@ -15,17 +15,18 @@ bot = SylviaBot()  # Initialize default bot instance
 
 class Message(BaseModel):
     user_input: str
+    feedback: int = None  # Optional feedback (+1 or -1)
+    switch_profile: str = None  # Optional profile switch
+    hybrid_weights: dict = None  # Optional hybrid weights
 
 @app.post("/chat")
 def chat(msg: Message):
     """
     Endpoint to send a message to Sylvia and receive a response.
-
-    Args:
-        msg (Message): User input message.
-
-    Returns:
-        dict: Bot's response.
     """
-    response = bot.get_response(msg.user_input)
+    if msg.switch_profile:
+        bot.switch_personality(msg.switch_profile)
+    if msg.hybrid_weights:
+        bot.set_weighted_hybrid(msg.hybrid_weights)
+    response = bot.get_response(msg.user_input, feedback=msg.feedback)
     return {"response": response}

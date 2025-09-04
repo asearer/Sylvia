@@ -1,5 +1,9 @@
-chatterbot
 fastapi
 uvicorn
 pydantic
 pyyaml
+langchain
+langchain_community
+openai
+textblob
+matplotlib
