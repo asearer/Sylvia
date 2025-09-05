@@ -1,16 +1,8 @@
 """
 main_gui.py
 
-Fully GUI-only chat interface with live plots using PersonalityGUIVisualizer.
-Features:
-- Horizontal resizable panels: personality visualization (left) and chat interface (right).
-- Vertical resizable panels inside chat: chat history vs input + controls.
-- Dropdown menu to switch personalities.
-- Dynamic weighted hybrid creation via GUI using sliders for weights.
-- Feedback buttons for user-driven evolution.
-- Silenced internal debug prints from Personality engine.
-- Keyboard shortcuts: Enter to send messages, Esc to quit.
-- Bot consistently named "Sylvia" in chat.
+GUI-based chat interface for Sylvia with live personality visualization, hybrid weight bars,
+and live terminal logging of processing times and internal debug output.
 """
 
 import sys
@@ -18,8 +10,10 @@ import os
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, StringVar, OptionMenu
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 import io
 from pathlib import Path
+import time
 
 # Add ai_personality folder to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__)))
@@ -29,81 +23,89 @@ from personality.visualizer_gui import PersonalityGUIVisualizer
 
 
 class PersonalityChatApp:
-    """
-    GUI application for interacting with the Sylvia chatbot with live personality visualization.
-    """
+    """GUI application for interacting with Sylvia with live personality visualization."""
 
     def __init__(self, master):
-        """
-        Initialize the GUI, personality engine, and visualizer.
-
-        Args:
-            master (tk.Tk): The root Tkinter window.
-        """
+        """Initialize GUI, Personality engine, and visualization."""
         self.master = master
         master.title("Sylvia Chatbot")
-
-        # Bot name
         self.bot_name = "Sylvia"
 
-        # Locate profiles.json relative to this file
         profiles_path = Path(__file__).parent / "personality" / "profiles.json"
-
-        # Initialize Personality engine
         self.persona = Personality("astronaut", profiles_path=profiles_path, evolving=True)
-
-        # Initialize visualizer for personality plots
         self.visualizer = PersonalityGUIVisualizer(self.persona)
 
-        # Track last message for feedback
         self.last_user_message = None
         self.last_bot_response = None
 
-        # --- Horizontal PanedWindow for visualization and chat ---
+        # Terminal light/dark mode
+        self.terminal_mode = "light"
+        self.terminal_bg_light = "#f0f0f0"
+        self.terminal_fg_light = "#000000"
+        self.terminal_bg_dark = "#1e1e1e"
+        self.terminal_fg_dark = "#f0f0f0"
+
+        # --- Main horizontal pane: visualization | chat+terminal ---
         self.main_pane = tk.PanedWindow(master, orient=tk.HORIZONTAL)
         self.main_pane.pack(fill=tk.BOTH, expand=True)
 
-        # Left frame: Visualization
+        # Left pane: visualization
         self.viz_frame = tk.Frame(self.main_pane)
         self.main_pane.add(self.viz_frame, minsize=200)
-
         self.canvas = FigureCanvasTkAgg(self.visualizer.fig, master=self.viz_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         self.canvas.draw()
 
-        # Right frame: Chat (with vertical resizable panes)
-        self.chat_pane = tk.PanedWindow(self.main_pane, orient=tk.VERTICAL)
-        self.main_pane.add(self.chat_pane, minsize=300)
+        # Right pane: vertical chat + terminal (50/50)
+        self.right_pane = tk.PanedWindow(self.main_pane, orient=tk.VERTICAL)
+        self.main_pane.add(self.right_pane, minsize=300)
 
-        # Top frame: Chat messages
-        self.chat_frame = tk.Frame(self.chat_pane)
-        self.chat_pane.add(self.chat_frame, minsize=200)
+        # Chat panel (top, 50%)
+        self.chat_frame = tk.Frame(self.right_pane)
+        self.right_pane.add(self.chat_frame, minsize=200)
+        self.chat_frame.pack_propagate(False)
 
+        # Terminal panel (bottom, 50%)
+        self.terminal_frame = tk.Frame(self.right_pane)
+        self.right_pane.add(self.terminal_frame, minsize=200)
+        self.terminal_frame.pack_propagate(False)
+        self.terminal_window = scrolledtext.ScrolledText(
+            self.terminal_frame,
+            wrap=tk.WORD,
+            state=tk.DISABLED,
+            bg=self.terminal_bg_light,
+            fg=self.terminal_fg_light
+        )
+        self.terminal_window.pack(fill=tk.BOTH, expand=True)
+
+        # --- Horizontal split inside chat panel: messages | input+controls ---
+        self.chat_pane = tk.PanedWindow(self.chat_frame, orient=tk.HORIZONTAL)
+        self.chat_pane.pack(fill=tk.BOTH, expand=True)
+
+        # Chat messages (left)
+        self.messages_frame = tk.Frame(self.chat_pane)
+        self.chat_pane.add(self.messages_frame, minsize=500)
         self.chat_window = scrolledtext.ScrolledText(
-            self.chat_frame, wrap=tk.WORD, state=tk.DISABLED
+            self.messages_frame, wrap=tk.WORD, state=tk.DISABLED
         )
         self.chat_window.pack(fill=tk.BOTH, expand=True)
 
-        # Bottom frame: Input + controls
+        # Input + controls (right)
         self.input_control_frame = tk.Frame(self.chat_pane)
-        self.chat_pane.add(self.input_control_frame, minsize=150)
+        self.chat_pane.add(self.input_control_frame, minsize=500)
 
-        # --- Input frame ---
+        # Input frame
         input_frame = tk.Frame(self.input_control_frame)
         input_frame.pack(fill=tk.X, padx=5, pady=5)
-
         self.input_box = tk.Entry(input_frame)
         self.input_box.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         self.input_box.bind("<Return>", self.send_message)
-
         self.send_btn = tk.Button(input_frame, text="Send", command=self.send_message)
         self.send_btn.pack(side=tk.LEFT)
 
-        # --- Control frame for personality and hybrid dropdowns ---
+        # Personality & hybrid controls
         control_frame = tk.Frame(self.input_control_frame)
         control_frame.pack(pady=5)
-
-        # Personality dropdown
         self.selected_personality = StringVar()
         self.selected_personality.set(list(self.persona.profiles.keys())[0])
         self.personality_menu = OptionMenu(
@@ -113,20 +115,20 @@ class PersonalityChatApp:
             command=self.switch_personality_dropdown
         )
         self.personality_menu.pack(side=tk.LEFT, padx=5)
-
-        # Weighted hybrid button
         self.hybrid_btn = tk.Button(control_frame, text="Set Weighted Hybrid", command=self.dynamic_hybrid_dialog)
         self.hybrid_btn.pack(side=tk.LEFT, padx=5)
 
         # Feedback buttons
         feedback_frame = tk.Frame(self.input_control_frame)
         feedback_frame.pack(pady=5)
-
         self.positive_fb = tk.Button(feedback_frame, text="👍", command=lambda: self.send_feedback(1))
         self.positive_fb.pack(side=tk.LEFT, padx=5)
-
         self.negative_fb = tk.Button(feedback_frame, text="👎", command=lambda: self.send_feedback(-1))
         self.negative_fb.pack(side=tk.LEFT, padx=5)
+
+        # Terminal light/dark toggle
+        self.toggle_btn = tk.Button(self.input_control_frame, text="Toggle Terminal Mode", command=self.toggle_terminal_mode)
+        self.toggle_btn.pack(pady=5)
 
         # Keyboard shortcut to quit
         master.bind("<Escape>", lambda e: master.quit())
@@ -135,51 +137,75 @@ class PersonalityChatApp:
         self.update_visualizer()
 
     # ----------------------
+    # Terminal logging
+    # ----------------------
+    def log_terminal(self, message):
+        """Thread-safe logging to terminal pane."""
+        self.master.after(0, lambda: self.append_terminal(message))
+
+    # ----------------------
     # Chat methods
     # ----------------------
     def append_chat(self, speaker, message):
-        """
-        Append a message to the chat window.
-
-        Args:
-            speaker (str): Speaker name (e.g., "You", "Sylvia").
-            message (str): Message content.
-        """
+        """Append message to chat."""
         self.chat_window.config(state=tk.NORMAL)
         self.chat_window.insert(tk.END, f"{speaker}: {message}\n")
         self.chat_window.config(state=tk.DISABLED)
         self.chat_window.see(tk.END)
 
+    def append_terminal(self, message):
+        """Append message to terminal."""
+        self.terminal_window.config(state=tk.NORMAL)
+        self.terminal_window.insert(tk.END, f"{message}\n")
+        self.terminal_window.config(state=tk.DISABLED)
+        self.terminal_window.see(tk.END)
+
+    def toggle_terminal_mode(self):
+        """Toggle terminal between light and dark mode."""
+        if self.terminal_mode == "light":
+            self.terminal_window.config(bg=self.terminal_bg_dark, fg=self.terminal_fg_dark)
+            self.terminal_mode = "dark"
+        else:
+            self.terminal_window.config(bg=self.terminal_bg_light, fg=self.terminal_fg_light)
+            self.terminal_mode = "light"
+
     def send_message(self, event=None):
-        """
-        Handle user input from the GUI entry box and generate chatbot response.
-        """
+        """Handle user input and chatbot response with live processing logging."""
         user_msg = self.input_box.get().strip()
         if not user_msg:
             return
-
         self.append_chat("You", user_msg)
+        self.log_terminal(f"Input received: {user_msg}")
         self.input_box.delete(0, tk.END)
 
-        # Silence internal debug prints
+        start_time = time.time()
+
+        # Capture internal prints
         old_stdout = sys.stdout
         sys.stdout = io.StringIO()
         try:
             bot_response = self.persona.chat(user_msg)
+            internal_output = sys.stdout.getvalue()
         finally:
             sys.stdout = old_stdout
 
+        end_time = time.time()
+        elapsed = end_time - start_time
+        self.log_terminal(f"Processing time: {elapsed:.3f}s")
+
+        # Show internal debug output
+        if internal_output.strip():
+            self.log_terminal(f"Debug: {internal_output.strip()}")
+
         self.append_chat(self.bot_name, bot_response)
+        self.log_terminal(f"Output: {bot_response}")
 
         self.last_user_message = user_msg
         self.last_bot_response = bot_response
-
         self.update_visualizer()
 
     def send_feedback(self, feedback_value):
-        """
-        Send user feedback (+1/-1) to the Personality engine.
-        """
+        """Send feedback to Personality engine."""
         if self.last_user_message and self.last_bot_response:
             self.persona._automatic_evolution(
                 self.last_user_message, self.last_bot_response, feedback_value
@@ -187,6 +213,7 @@ class PersonalityChatApp:
             self.persona.save()
             self.update_visualizer()
             self.append_chat(self.bot_name, "Feedback recorded ✅")
+            self.log_terminal(f"Feedback: {feedback_value}")
         else:
             messagebox.showinfo("Info", "Send a message before giving feedback.")
 
@@ -194,24 +221,20 @@ class PersonalityChatApp:
     # Personality dropdown
     # ----------------------
     def switch_personality_dropdown(self, value):
-        """
-        Switch the active personality based on the dropdown selection.
-        """
+        """Switch active personality."""
         try:
             self.persona.switch_personality(value)
             self.update_visualizer()
             self.append_chat(self.bot_name, f"Switched to {value}")
+            self.log_terminal(f"Personality switched to {value}")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
 
     # ----------------------
-    # Dynamic weighted hybrid using sliders
+    # Weighted hybrid with sliders
     # ----------------------
     def dynamic_hybrid_dialog(self):
-        """
-        Open a dialog allowing the user to assign weights to multiple profiles
-        using sliders and apply them as a weighted hybrid.
-        """
+        """Weighted hybrid sliders."""
         profiles = list(self.persona.profiles.keys())
         weight_sliders = {}
 
@@ -228,13 +251,9 @@ class PersonalityChatApp:
             weight_sliders[profile] = slider
 
         def apply_weights():
-            weights = {}
-            for profile, slider in weight_sliders.items():
-                val = slider.get()
-                if val > 0:
-                    weights[profile] = val
+            weights = {p: s.get() for p, s in weight_sliders.items() if s.get() > 0}
             if not weights:
-                messagebox.showerror("Invalid Input", "At least one weight must be greater than 0")
+                messagebox.showerror("Invalid Input", "At least one weight must be > 0")
                 return
             try:
                 self.persona.set_weighted_hybrid(weights)
@@ -243,6 +262,7 @@ class PersonalityChatApp:
                     self.bot_name,
                     f"Weighted hybrid active: {', '.join([f'{k}({v:.2f})' for k,v in weights.items()])}"
                 )
+                self.log_terminal(f"Weighted hybrid set: {weights}")
                 dialog.destroy()
             except ValueError as e:
                 messagebox.showerror("Error", str(e))
@@ -253,10 +273,21 @@ class PersonalityChatApp:
     # Visualization
     # ----------------------
     def update_visualizer(self):
-        """
-        Refresh the personality visualization plot.
-        """
+        """Refresh personality visualization and hybrid weight bars."""
         self.visualizer.update_history()
+
+        # Draw hybrid weights as bar chart
+        weights = getattr(self.persona, "active_hybrid_weights", None)
+        if weights:
+            if not hasattr(self, "bar_ax"):
+                self.bar_ax = self.visualizer.fig.add_axes([0.7, 0.05, 0.25, 0.25])
+            self.bar_ax.clear()
+            self.bar_ax.bar(weights.keys(), weights.values(), color='orange')
+            self.bar_ax.set_title("Hybrid Weights")
+            self.bar_ax.set_ylim(0, 1)
+        elif hasattr(self, "bar_ax"):
+            self.bar_ax.clear()
+
         self.canvas.draw()
 
 
@@ -264,4 +295,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = PersonalityChatApp(root)
     root.mainloop()
-
