@@ -1,27 +1,37 @@
 sylvia/
-├── apps/                  # Individual microservice apps
-│   ├── playground/        # Original ML playground app
-│   │   ├── src/
+├── apps/                        # Individual ML apps/microservices
+│   ├── playground/              # Original ML playground
+│   │   ├── src/                 # Application code
+│   │   ├── notebooks/           # Experimentation notebooks
+│   │   ├── data/                # Raw & processed data specific to this app
+│   │   ├── models/              # Trained model checkpoints
 │   │   ├── tests/
 │   │   └── Dockerfile
-│   ├── classifier/        # Example: new ML app
+│   │
+│   ├── classifier/              # New ML app
 │   │   ├── src/
+│   │   ├── notebooks/
+│   │   ├── data/
+│   │   ├── models/
 │   │   ├── tests/
 │   │   └── Dockerfile
-│   └── ...                # Future apps
+│   │
+│   └── ...                      # Future apps
 │
-├── services/              # Shared microservices (if needed)
-│   ├── auth/              # Authentication service
-│   ├── data/              # Shared data handling service
-│   └── ...                # Other shared services
+├── services/                    # Shared microservices (optional)
+│   ├── auth/
+│   ├── data/
+│   └── ...
 │
-├── libs/                  # Shared libraries/utilities
-│   ├── ml-utils/
-│   ├── api-clients/
-│   └── ...                
+├── libs/                        # Shared libraries/utilities
+│   ├── ml-utils/                # Helper functions, preprocessing, metrics
+│   ├── api-clients/             # For inter-service communication
+│   └── ...
 │
-├── scripts/               # Devops, deployment, maintenance scripts
+├── experiments/                 # Global experiments, logging, dashboards
 │
-├── docker-compose.yml     # Optional: orchestrate multi-service dev environment
+├── scripts/                     # Devops, deployment, orchestration scripts
+│
+├── docker-compose.yml           # Optional orchestration for local dev
 ├── README.md
 └── .gitignore

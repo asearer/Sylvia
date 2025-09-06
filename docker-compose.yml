@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  playground:
+    build: ./apps/playground
+    container_name: playground_app
+  classifier:
+    build: ./apps/classifier
+    container_name: classifier_app
