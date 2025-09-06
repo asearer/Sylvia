@@ -38,5 +38,35 @@
     "profile": "astronaut",
     "input": "space doctor monkey cheese",
     "timestamp": "2025-09-06T12:24:10"
+  },
+  {
+    "profile": "astronaut",
+    "input": "hi",
+    "timestamp": "2025-09-06T13:04:15"
+  },
+  {
+    "profile": "astronaut",
+    "input": "hi",
+    "timestamp": "2025-09-06T13:04:15"
+  },
+  {
+    "profile": "astronaut",
+    "input": "g",
+    "timestamp": "2025-09-06T13:04:19"
+  },
+  {
+    "profile": "astronaut",
+    "input": "g",
+    "timestamp": "2025-09-06T13:04:19"
+  },
+  {
+    "profile": "astronaut",
+    "input": "hb",
+    "timestamp": "2025-09-06T13:04:22"
+  },
+  {
+    "profile": "astronaut",
+    "input": "hb",
+    "timestamp": "2025-09-06T13:04:22"
   }
 ]
