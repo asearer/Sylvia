@@ -1,0 +1,42 @@
+[
+  {
+    "profile": "astronaut",
+    "input": "hello",
+    "timestamp": "2025-09-06T12:18:49"
+  },
+  {
+    "profile": "astronaut",
+    "input": "hello",
+    "timestamp": "2025-09-06T12:18:49"
+  },
+  {
+    "profile": "astronaut",
+    "input": "something",
+    "timestamp": "2025-09-06T12:18:54"
+  },
+  {
+    "profile": "astronaut",
+    "input": "something",
+    "timestamp": "2025-09-06T12:18:54"
+  },
+  {
+    "profile": "astronaut",
+    "input": "funky",
+    "timestamp": "2025-09-06T12:18:59"
+  },
+  {
+    "profile": "astronaut",
+    "input": "funky",
+    "timestamp": "2025-09-06T12:18:59"
+  },
+  {
+    "profile": "astronaut",
+    "input": "space doctor monkey cheese",
+    "timestamp": "2025-09-06T12:24:10"
+  },
+  {
+    "profile": "astronaut",
+    "input": "space doctor monkey cheese",
+    "timestamp": "2025-09-06T12:24:10"
+  }
+]
