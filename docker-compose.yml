@@ -1,8 +1,31 @@
-version: '3.8'
+version: "3.8"
+
 services:
+  sylvia-app:
+    build: ./apps/sylvia-app
+    container_name: sylvia-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - personality-engine
+
+  personality-engine:
+    build: ./apps/personality-engine
+    container_name: personality-engine
+    ports:
+      - "5001:5001"
+
   playground:
     build: ./apps/playground
-    container_name: playground_app
+    container_name: playground-app
+    ports:
+      - "5002:5002"
+    profiles: ["experimental"]  # only run if you opt-in
+
   classifier:
     build: ./apps/classifier
-    container_name: classifier_app
+    container_name: classifier-app
+    ports:
+      - "5003:5003"
+    profiles: ["experimental"]  # only run if you opt-in
+
