@@ -3,7 +3,7 @@ import json
 import time
 import random
 from typing import List, Dict, Optional
-from src.bot.responder import DefaultResponder
+from responder import DefaultResponder
 
 
 class MemoryBank:
@@ -73,7 +73,7 @@ class SylviaBot:
         else:
             raise ValueError(f"Unknown backend: {backend}")
 
-    def get_response(self, user_input: str, feedback: int = None) -> str:
+    def get_response(self, user_input: str, feedback: int = None) -> str | None:
         """Generate a response based on selected backend."""
         profile = self.active_profiles[0] if self.active_profiles else "default"
 

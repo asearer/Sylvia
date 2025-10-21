@@ -6,7 +6,7 @@ Can be run as CLI or (optionally) launch GUI.
 """
 
 import argparse
-from src.console_chat import main as console_main
+from console_chat import main as console_main
 # from src.gui import main as gui_main  # Uncomment when GUI is implemented
 
 if __name__ == "__main__":
