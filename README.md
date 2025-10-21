@@ -1,101 +1,88 @@
-# Sylvia: From Playground to Platform
+# Sylvia: From Playground to Event-Driven ML Platform
 
-**Sylvia** started as a personal ML playground for learning, but it's evolving into a **mono-repo of independent ML microservice apps**. Each app is self-contained but can share common libraries, infrastructure, and tooling.
+**Sylvia** began as a personal ML playground, but is now a **mono-repo of independent ML microservices**, orchestrated through Matrix event-driven architecture. Each app, dashboard, and bot is self-contained, modular, and Dockerized — sharing common libraries and infrastructure.
 
-## Usage Instructions
+---
 
-Sylvia can be launched using **CLI**, **GUI**, or an **API backend** (future integration). Currently, a **stub backend** is available for safe testing.
+## Matrix Event Integration
 
-### Command-Line Interface (CLI)
+- All ML apps and dashboards communicate via **Matrix rooms** (using `libs/api-clients/matrix_wrapper.py`).
+- Event types: `ml.metrics`, `ml.status`, `ml.model`, and more.
+- Dashboards and bots receive and orchestrate events for full decoupled, event-driven ML workflows.
 
-```bash
-# Launch CLI with the stub backend
-python main.py --mode cli --backend stub
-```
+**Main components:**
+- `apps/classifier/src/train.py` — ML training example, sends structured events.
+- `libs/api-clients/matrix_wrapper.py` — Matrix event client wrapper (sync/async, modular).
+- `experiments/dashboards/metrics_dashboard.ipynb` — Dashboard that receives/visualizes Matrix events.
+- `services/matrix/src/bot.py` — Example orchestration bot (listens/responds to events/commands).
 
-**CLI Features:**
+See code comments for environment variable configuration for Matrix homeserver, user, password, and room IDs.
 
-* `/switch [profile]` — switch active personality profile
+---
 
-* `/hybrid [profile:weight,...]` — set weighted hybrid personalities
+## Project Structure & Modularity
 
-* `+` / `-` — provide feedback for last response
+- Every ML app, dashboard, library, and bot has its own `tests/` folder — **no top-level `tests/` directory**.
+- Modern structure: 
+    - `apps/<app>/tests/` for ML apps
+    - `libs/api-clients/tests/` for wrappers/libraries
+    - `services/matrix/tests/` for bots
+    - `experiments/dashboards/tests/` for dashboards
+- **All tests use `pytest`** (and `pytest-mock`/`unittest.mock` for external services).
+- All Matrix, file, and network dependencies are mocked for fast, isolated, repeatable CI/dev runs.
 
-* `exit` — quit the CLI
-
-* Save conversations interactively after each message
-
-### Graphical User Interface (GUI)
-
-```bash
-# Launch GUI with the stub backend
-python main.py --mode gui --backend stub
-```
-
-**GUI Features:**
-
-* Send messages to Sylvia via a chat box
-
-* Switch personality profiles or set hybrid weights
-
-* Debug logs and response times displayed in real-time
-
-* Stubbed visualization panel (Matplotlib) showing placeholder data
-
-### API (Planned)
-
-* Uvicorn-powered API for remote interaction: `python main.py --mode api`
-
-* Provides REST endpoints for sending messages and switching profiles
-
-* Full model integration coming in future updates
-
-## Features & Goals
-
-* 🧩 **Modular Apps:** Each app is isolated and can evolve independently.
-
-* 🔄 **Shared Utilities:** Avoid code duplication and promote reusability.
-
-* 🚀 **Scalable:** Add new ML apps easily while maintaining clean structure.
-
-* 📊 **Experiment-Friendly:** Notebooks, data, and models are organized per app for reproducibility.
-
-* 💬 **Interactive Interfaces:** CLI and GUI allow real-time interaction with SylviaBot.
-
-* 🧪 **Safe Testing:** Stubbed backend returns canned responses and prevents runtime errors from the full Personality engine or plotting issues.
-
-## Next Steps
-
-* Re-integrate the full Personality engine and advanced model backends.
-
-* Enable Matplotlib-based visualization in GUI with live personality updates.
-
-* Expand CLI/API backends for local and remote models.
-
-* Add more ML apps and microservices while maintaining modularity.
-
-## Running Tests
-
-All major components include automated tests using `pytest`. Tests use `pytest-mock` or standard `unittest.mock` for Matrix communication and environment emulation.
-
-**To run all tests for the project:**
-
+**How to discover tests (from repo root):**
 ```sh
 pytest apps/classifier/tests/
 pytest libs/api-clients/tests/
 pytest experiments/dashboards/tests/
 pytest services/matrix/tests/
+# Also:
+pytest apps/playground/tests/
+pytest apps/personality-engine/tests/
+pytest apps/sylvia-app/tests/
 ```
-
-- `conftest.py` in each test folder provides fixtures (dummy credentials, mock Matrix clients, events).
-- Tests cover model, Matrix wrapper (sync/async), dashboard, and event-driven bot orchestration.
-- All Matrix network operations are mocked—no real traffic expected.
-- For Docker verification, use compose and `docker-compose logs` after container startup to check for errors/smoke test failures.
-
-**Test Categories**
-- `test_*.py`: Unit and integration tests (look for test_train.py, test_matrix_wrapper.py, test_dashboard.py, test_bot.py)
-- Use `-k` to run specific groups of tests, e.g. `pytest ... -k 'integration'`
 
 ---
 
-*Sylvia is moving from a single experimental playground to a full ecosystem of ML tools — modular, scalable, interactive, and experiment-ready.*
+## Docker & Orchestration
+
+- **Every service/app includes a Dockerfile** and is composed via `docker-compose.yml`.
+- Matrix config is via environment variables (env file, secrets or Compose overrides).
+- For interactive dashboard, run the Jupyter service and access on port 8888.
+- Orchestrate services with:
+
+```sh
+docker-compose --profile experimental up
+```
+
+- To test Docker builds and basic starts:
+```sh
+bash scripts/test_docker_smoke.sh
+```
+
+---
+
+## Running Tests
+
+- Tests cover ML workflows, Matrix communication (including error/negative cases), dashboard event parsing, bot command orchestration, and Docker smoke/health.
+- `conftest.py` in each test directory provides fixtures for mock credentials, Matrix clients, and events.
+- Example test invocation:
+
+```sh
+pytest apps/classifier/tests/       # ML training/tests
+pytest libs/api-clients/tests/      # Matrix wrapper/tests
+pytest experiments/dashboards/tests/# Dashboard event/tests
+pytest services/matrix/tests/       # Bot event/tests
+```
+
+---
+
+## Extending the Platform
+- To add a new app, dashboard, or bot: create a new folder with its own `src/` and `tests/`.
+- Import and use the shared Matrix wrapper (do not implement Matrix integration yourself).
+- Standardize new event types and room assignments in code comments and docs.
+
+---
+
+*Sylvia is an evolving, experiment-friendly, event-driven ML ecosystem: modular, scalable, Dockerized, and fully testable across all components.*
