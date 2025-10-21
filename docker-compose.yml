@@ -27,5 +27,36 @@ services:
     container_name: classifier-app
     ports:
       - "5003:5003"
+    environment:
+      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
+      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
+      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
+      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
     profiles: ["experimental"]  # only run if you opt-in
+
+  matrix-bot:
+    build: ./services/matrix
+    container_name: matrix-bot
+    environment:
+      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
+      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
+      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
+      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
+    profiles: ["experimental"]
+
+  dashboard:
+    image: jupyter/base-notebook
+    container_name: dashboard-notebook
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./experiments/dashboards:/home/jovyan/work:ro
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
+      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
+      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
+      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
+    command: start-notebook.sh --NotebookApp.token=''
+    profiles: ["experimental"]
 

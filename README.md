@@ -74,6 +74,28 @@ python main.py --mode gui --backend stub
 
 * Add more ML apps and microservices while maintaining modularity.
 
+## Running Tests
+
+All major components include automated tests using `pytest`. Tests use `pytest-mock` or standard `unittest.mock` for Matrix communication and environment emulation.
+
+**To run all tests for the project:**
+
+```sh
+pytest apps/classifier/tests/
+pytest libs/api-clients/tests/
+pytest experiments/dashboards/tests/
+pytest services/matrix/tests/
+```
+
+- `conftest.py` in each test folder provides fixtures (dummy credentials, mock Matrix clients, events).
+- Tests cover model, Matrix wrapper (sync/async), dashboard, and event-driven bot orchestration.
+- All Matrix network operations are mocked—no real traffic expected.
+- For Docker verification, use compose and `docker-compose logs` after container startup to check for errors/smoke test failures.
+
+**Test Categories**
+- `test_*.py`: Unit and integration tests (look for test_train.py, test_matrix_wrapper.py, test_dashboard.py, test_bot.py)
+- Use `-k` to run specific groups of tests, e.g. `pytest ... -k 'integration'`
+
 ---
 
 *Sylvia is moving from a single experimental playground to a full ecosystem of ML tools — modular, scalable, interactive, and experiment-ready.*
