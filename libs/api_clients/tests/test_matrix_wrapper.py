@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from libs.api-clients import matrix_wrapper
+from libs.api_clients import matrix_wrapper
 import asyncio
 
 @pytest.fixture

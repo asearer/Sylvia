@@ -9,7 +9,7 @@ Listens for custom events in Matrix and triggers workflow/ML jobs as needed.
 """
 import os
 import asyncio
-from libs.api-clients.matrix_wrapper import MatrixClientWrapper
+from libs.api_clients.matrix_wrapper import MatrixClientWrapper
 from nio import RoomMessageText
 
 MATRIX_HOMESERVER = os.environ.get("MATRIX_HOMESERVER", "https://matrix.org")
