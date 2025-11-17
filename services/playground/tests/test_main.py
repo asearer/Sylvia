@@ -1,4 +1,4 @@
-from apps.playground.src.main import main
+from services.playground.src.main import main
 
 def test_main(capsys):
     main()

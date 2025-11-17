@@ -1,7 +1,7 @@
-import pytest
 import random
 from unittest.mock import patch, MagicMock
-from apps.classifier.src import train
+from services.classifier.src import train
+
 
 # Unit: Metrics calculation, logic isolation
 def test_metrics_increases():

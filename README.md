@@ -40,7 +40,7 @@ pytest services/matrix/tests/
 # Also:
 pytest apps/playground/tests/
 pytest apps/personality-engine/tests/
-pytest apps/sylvia-app/tests/
+pytest apps/sylvia_app/tests/
 ```
 
 ---
