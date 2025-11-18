@@ -1,88 +1,178 @@
-# Sylvia: From Playground to Event-Driven ML Platform
 
-**Sylvia** began as a personal ML playground, but is now a **mono-repo of independent ML microservices**, orchestrated through Matrix event-driven architecture. Each app, dashboard, and bot is self-contained, modular, and Dockerized — sharing common libraries and infrastructure.
+# Sylvia: Multi-Modal, Event-Driven ML Platform
 
----
-
-## Matrix Event Integration
-
-- All ML apps and dashboards communicate via **Matrix rooms** (using `libs/api-clients/matrix_wrapper.py`).
-- Event types: `ml.metrics`, `ml.status`, `ml.model`, and more.
-- Dashboards and bots receive and orchestrate events for full decoupled, event-driven ML workflows.
-
-**Main components:**
-- `apps/classifier/src/train.py` — ML training example, sends structured events.
-- `libs/api-clients/matrix_wrapper.py` — Matrix event client wrapper (sync/async, modular).
-- `experiments/dashboards/metrics_dashboard.ipynb` — Dashboard that receives/visualizes Matrix events.
-- `services/matrix/src/bot.py` — Example orchestration bot (listens/responds to events/commands).
-
-See code comments for environment variable configuration for Matrix homeserver, user, password, and room IDs.
+[![Build Status](https://github.com/asearer/Sylvia/actions/workflows/ci.yml/badge.svg)](https://github.com/asearer/Sylvia/actions/workflows/ci.yml)
+[![Tests](https://github.com/asearer/Sylvia/actions/workflows/tests.yml/badge.svg)](https://github.com/asearer/Sylvia/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/asearer/Sylvia.svg?style=flat-square)](https://codecov.io/gh/asearer/Sylvia)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/asearer/sylvia.svg)](https://hub.docker.com/r/asearer/sylvia)
+[![License](https://img.shields.io/github/license/asearer/Sylvia.svg)](https://github.com/asearer/Sylvia/blob/main/LICENSE)
 
 ---
 
-## Project Structure & Modularity
+## Overview
 
-- Every ML app, dashboard, library, and bot has its own `tests/` folder — **no top-level `tests/` directory**.
-- Modern structure: 
-    - `apps/<app>/tests/` for ML apps
-    - `libs/api-clients/tests/` for wrappers/libraries
-    - `services/matrix/tests/` for bots
-    - `experiments/dashboards/tests/` for dashboards
-- **All tests use `pytest`** (and `pytest-mock`/`unittest.mock` for external services).
-- All Matrix, file, and network dependencies are mocked for fast, isolated, repeatable CI/dev runs.
+**Sylvia** is a modular, event-driven AI platform designed for **multi-modal interaction, adaptive learning, self-healing, and device control**. Originally a personal ML playground, it has evolved into a **microservice-first architecture**, where every feature — ML apps, vision/audio processing, voice assistant, research assistant, device control, and monitoring — is a self-contained service, orchestrated via **Matrix events**.
 
-**How to discover tests (from repo root):**
-```sh
-pytest apps/classifier/tests/
-pytest libs/api-clients/tests/
-pytest experiments/dashboards/tests/
-pytest services/matrix/tests/
-# Also:
-pytest apps/playground/tests/
-pytest apps/personality-engine/tests/
-pytest apps/sylvia_app/tests/
+---
+
+## 1️⃣ Apps vs. Services
+
+- **Apps (`apps/`)**  
+  High-level user-facing or orchestrating applications.  
+  Example: `sylvia_app` — the main frontend/interaction app.
+
+- **Services (`services/`)**  
+  Core modular functionality, including:  
+  - `classifier` — ML model training & inference  
+  - `personality_engine` — agent behavior and personality  
+  - `vision` — face & object recognition  
+  - `sensor_input` — camera & audio activity recognition  
+  - `voice_assistant` — speech I/O & command processing  
+  - `code_analysis` — DeepHat-powered code understanding  
+  - `research_assistant` — document ingestion & querying  
+  - `device_control` — IoT/network device integration  
+  - `self_healing` — monitors services and triggers recovery  
+  - `monitoring` — metrics collection & dashboards  
+
+Each service is **self-contained**, with its own `src/`, `tests/`, and `Dockerfile`.
+
+---
+
+## 2️⃣ Matrix Event Integration
+
+- Apps and services communicate via **Matrix rooms** (`libs/api-clients/matrix_wrapper.py`).  
+- Event types include:  
+  `ml.metrics`, `ml.status`, `ml.model`, `vision.detected`, `audio.detected`, `device.command`, `self_healing.alert`, etc.  
+- Orchestration example:
+  - `sylvia_app` emits a user command event  
+  - `voice_assistant` interprets speech, triggers the appropriate service  
+  - `classifier` or `research_assistant` responds with results  
+  - Monitoring and self-healing services log or recover from failures  
+
+---
+
+## 3️⃣ Project Structure
+
 ```
 
+sylvia/
+├── apps/
+│   └── sylvia_app/
+│       ├── src/
+│       │   ├── main.py
+│       │   └── interface.py
+│       ├── data/
+│       ├── models/
+│       ├── tests/
+│       └── Dockerfile
+├── services/
+│   ├── classifier/
+│   ├── personality_engine/
+│   ├── vision/
+│   ├── sensor_input/
+│   ├── voice_assistant/
+│   ├── code_analysis/
+│   ├── research_assistant/
+│   ├── device_control/
+│   ├── self_healing/
+│   └── monitoring/
+├── libs/
+│   ├── ml-utils/
+│   ├── api-clients/
+│   ├── models/
+│   ├── adaptive_learning/
+│   └── utils/
+├── experiments/
+├── scripts/
+├── docker-compose.yml
+├── README.md
+└── .gitignore
+
+````
+
+- `apps/`: orchestrating or user-facing apps  
+- `services/`: modular microservices with independent entrypoints  
+- `libs/`: shared code (ML utilities, API clients, adaptive learning, logging, helpers)  
+- `experiments/`: dashboards, logging, global experiments  
+- `scripts/`: DevOps, orchestration, CI/CD helpers  
+
 ---
 
-## Docker & Orchestration
+## 4️⃣ Docker & Orchestration
 
-- **Every service/app includes a Dockerfile** and is composed via `docker-compose.yml`.
-- Matrix config is via environment variables (env file, secrets or Compose overrides).
-- For interactive dashboard, run the Jupyter service and access on port 8888.
-- Orchestrate services with:
-
-```sh
+- Each app/service has its **own Dockerfile**.  
+- Orchestrate locally via `docker-compose.yml`:
+```bash
 docker-compose --profile experimental up
+````
+
+* Docker example for a service:
+
+```dockerfile
+WORKDIR /app
+COPY src/ ./src/
+CMD ["python", "src/main.py"]
 ```
 
-- To test Docker builds and basic starts:
-```sh
-bash scripts/test_docker_smoke.sh
-```
+* Profiles allow optional or experimental services to be included/excluded.
 
 ---
 
-## Running Tests
+## 5️⃣ Running Tests
 
-- Tests cover ML workflows, Matrix communication (including error/negative cases), dashboard event parsing, bot command orchestration, and Docker smoke/health.
-- `conftest.py` in each test directory provides fixtures for mock credentials, Matrix clients, and events.
-- Example test invocation:
+* Each app/service has its own `tests/` folder.
+* Tests cover ML workflows, event communication, sensor processing, self-healing, and Docker health checks.
+* Example commands:
 
-```sh
-pytest apps/classifier/tests/       # ML training/tests
-pytest libs/api-clients/tests/      # Matrix wrapper/tests
-pytest experiments/dashboards/tests/# Dashboard event/tests
-pytest services/matrix/tests/       # Bot event/tests
+```bash
+pytest apps/sylvia_app/tests/
+pytest services/classifier/tests/
+pytest services/vision/tests/
+pytest libs/api-clients/tests/
 ```
 
----
-
-## Extending the Platform
-- To add a new app, dashboard, or bot: create a new folder with its own `src/` and `tests/`.
-- Import and use the shared Matrix wrapper (do not implement Matrix integration yourself).
-- Standardize new event types and room assignments in code comments and docs.
+* `conftest.py` fixtures mock Matrix events, sensors, or external dependencies for CI isolation.
 
 ---
 
-*Sylvia is an evolving, experiment-friendly, event-driven ML ecosystem: modular, scalable, Dockerized, and fully testable across all components.*
+## 6️⃣ Extending the Platform
+
+* **Add a new service**:
+
+  1. Create `services/<new_service>/src/` with `main.py` and modules
+  2. Add `tests/` and `Dockerfile`
+  3. Register any new Matrix event types
+
+* **Add a new app** (user-facing orchestrator):
+
+  1. Create `apps/<new_app>/src/` with `main.py`
+  2. Add `tests/`, `data/`, `models/`, `Dockerfile`
+  3. Integrate services via Matrix events
+
+* **Shared libraries** go in `libs/` and are imported by apps/services.
+
+* Use `docker-compose.yml` for local orchestration, scaling, or testing.
+
+---
+
+## 7️⃣ Event & Service Map (Simplified)
+
+| Service            | Handles Event Types             | Consumed By                    |
+| ------------------ | ------------------------------- | ------------------------------ |
+| sylvia_app         | user.command                    | All services                   |
+| classifier         | ml.train, ml.predict            | sylvia_app, monitoring         |
+| personality_engine | personality.update              | sylvia_app, voice_assistant    |
+| vision             | vision.detected                 | sylvia_app, monitoring         |
+| sensor_input       | audio.detected, camera.detected | sylvia_app, monitoring         |
+| voice_assistant    | speech.input, command           | sylvia_app, device_control     |
+| code_analysis      | code.analyze                    | sylvia_app, research_assistant |
+| research_assistant | query.process                   | sylvia_app, monitoring         |
+| device_control     | device.command                  | sylvia_app, voice_assistant    |
+| self_healing       | self_healing.alert              | monitoring, sylvia_app         |
+| monitoring         | metrics.update, system.health   | sylvia_app                     |
+
+---
+
+*Sylvia is now a modular, scalable, multi-modal AI platform: fully testable, event-driven, adaptive, and production-ready.*
+
