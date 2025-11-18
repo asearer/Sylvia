@@ -1,24 +1,26 @@
 """
-Entrypoint for Research Assistant Service.
-
-Demonstrates document ingestion and querying.
+Entrypoint for the Research Assistant service.
+Coordinates ingestion, processing, and querying.
 """
-from ingestion import DocumentIngestor
+
+from ingestion import Ingestion
 from query_processor import QueryProcessor
 
-def main():
-    ingestor = DocumentIngestor()
-    processor = QueryProcessor(ingestor=ingestor)
+class ResearchAssistant:
+    def __init__(self):
+        self.ingestion = Ingestion()
+        self.query_processor = QueryProcessor()
 
-    # Ingest sample documents
-    ingestor.ingest_document("This is a test document about AI.", "doc1.txt")
-    ingestor.ingest_document("This document covers Python programming.", "doc2.txt")
+    def ingest_documents(self, sources):
+        """Ingest a list of document sources."""
+        return self.ingestion.ingest(sources)
 
-    # Perform a sample query
-    query_result = processor.query("Python")
-    print("Query result:", query_result)
-    print("Ingestor health:", ingestor.health_check())
-    print("QueryProcessor health:", processor.health_check())
+    def query(self, query_text):
+        """Process a query over ingested documents."""
+        return self.query_processor.process(query_text)
 
 if __name__ == "__main__":
-    main()
+    ra = ResearchAssistant()
+    ra.ingest_documents(["sample_paper.pdf"])
+    results = ra.query("Summarize key findings on AI alignment.")
+    print(results)

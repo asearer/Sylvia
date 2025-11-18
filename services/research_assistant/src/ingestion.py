@@ -1,36 +1,19 @@
 """
-Ingestion module for Research Assistant Service.
-
-Responsibilities:
-- Ingest documents (PDF, text, etc.)
-- Preprocess and store content for querying
+Handles ingestion of documents into the Research Assistant system.
 """
 
-class DocumentIngestor:
+from pdf_extractor import PDFExtractor
+
+class Ingestion:
     def __init__(self):
-        """
-        Initialize the DocumentIngestor module.
-        """
-        self.status = "initialized"
+        self.pdf_extractor = PDFExtractor()
         self.documents = []
 
-    def ingest_document(self, document_content: str, document_name: str) -> bool:
+    def ingest(self, sources):
         """
-        Ingest a document and store its content.
-
-        Args:
-            document_content (str): Raw text of the document
-            document_name (str): Name or identifier of the document
-
-        Returns:
-            bool: True if ingestion was successful
+        Ingest a list of document sources (PDFs, URLs, etc.)
         """
-        # Placeholder logic
-        self.documents.append({"name": document_name, "content": document_content})
-        return True
-
-    def health_check(self) -> dict:
-        """
-        Return module health status.
-        """
-        return {"module": "DocumentIngestor", "status": self.status}
+        for src in sources:
+            doc_text = self.pdf_extractor.extract(src)
+            self.documents.append(doc_text)
+        return self.documents

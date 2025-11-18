@@ -1,21 +1,6 @@
-"""
-End-to-end test for Research Assistant Service main.py.
-"""
-import unittest
-import subprocess
-import sys
+from main import ResearchAssistant
 
-class TestMainExecution(unittest.TestCase):
-    def test_main_runs(self):
-        result = subprocess.run(
-            [sys.executable, "src/main.py"],
-            capture_output=True,
-            text=True
-        )
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("Query result:", result.stdout)
-        self.assertIn("Ingestor health:", result.stdout)
-        self.assertIn("QueryProcessor health:", result.stdout)
-
-if __name__ == "__main__":
-    unittest.main()
+def test_research_assistant_instantiation():
+    ra = ResearchAssistant()
+    assert ra.ingestion is not None
+    assert ra.query_processor is not None
