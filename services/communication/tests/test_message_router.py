@@ -1,10 +1,35 @@
-from message_router import MessageRouter
-from discord_client import DiscordClient
-from matrix_client import MatrixClient
+# tests/test_message_router.py
 
-def test_route_message():
-    discord = DiscordClient()
-    matrix = MatrixClient()
-    router = MessageRouter([discord, matrix])
+import pytest
+import asyncio
+from message_router import MessageRouter
+
+# Mock async client
+class MockClient:
+    def __init__(self, name):
+        self.name = name
+        self.sent_messages = []
+
+    async def send_message(self, channel, message):
+        self.sent_messages.append((channel, message))
+
+@pytest.mark.asyncio
+async def test_route_message():
+    # Setup mock clients
+    discord = MockClient("discord")
+    matrix = MockClient("matrix")
+    clients = [discord, matrix]
+
+    router = MessageRouter(clients, default_channels={discord: "discord_chan", matrix: "matrix_chan"})
+
     message = {"content": "Hello"}
-    router.route_message(discord, message)
+
+    # Route message from discord
+    await router.route_message(discord, message)
+
+    # Discord should not receive its own message
+    assert all(msg[1] != "Hello" for msg in discord.sent_messages)  # No messages to discord
+
+    # Matrix should receive the message
+    assert matrix.sent_messages[0][1] == "Hello"
+    assert matrix.sent_messages[0][0] == "matrix_chan"
