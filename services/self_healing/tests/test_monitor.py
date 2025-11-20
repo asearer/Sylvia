@@ -16,9 +16,12 @@ class TestServiceMonitor(unittest.TestCase):
         healthy_service = {"status": "initialized"}
         unhealthy_service = {"status": "error"}
 
+        # Check healthy service
         self.assertTrue(self.monitor.check_service("svc1", healthy_service))
-        self.assertFalse(self.monitor.check_service("svc2", unhealthy_service))
         self.assertEqual(self.monitor.services_status["svc1"], "healthy")
+
+        # Check unhealthy service
+        self.assertFalse(self.monitor.check_service("svc2", unhealthy_service))
         self.assertEqual(self.monitor.services_status["svc2"], "unhealthy")
 
     def test_health_check(self):

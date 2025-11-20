@@ -1,37 +1,53 @@
 """
-Monitor module for self-healing service.
+monitor.py
+
+Monitor module for the self-healing service.
 
 Responsibilities:
-- Monitor status of services
-- Detect failures or issues
-- Trigger alerts or recovery actions
+- Track the status of registered services
+- Detect failures or anomalies
+- Trigger alerts or recovery hooks (future expansion)
 """
 
+from typing import Dict, Any
+
+
 class ServiceMonitor:
+    """
+    Monitors the health of services and records their status.
+    """
+
     def __init__(self):
         """
         Initialize the ServiceMonitor module.
         """
         self.status = "initialized"
-        self.services_status = {}  # Stores the health of monitored services
+        self.services_status: Dict[str, str] = {}  # Maps service_name -> "healthy"/"unhealthy"
 
-    def check_service(self, service_name: str, service_health: dict) -> bool:
+    def check_service(self, service_name: str, service_health: Dict[str, Any]) -> bool:
         """
         Check the health of a specific service.
 
         Args:
-            service_name (str): Name of the service
-            service_health (dict): Health report from the service
+            service_name (str): Name of the service.
+            service_health (dict): Health report from the service.
 
         Returns:
-            bool: True if service is healthy, False if issue detected
+            bool: True if healthy, False if unhealthy.
         """
-        healthy = service_health.get("status") == "initialized"
-        self.services_status[service_name] = "healthy" if healthy else "unhealthy"
-        return healthy
+        is_healthy = service_health.get("status") == "initialized"
+        self.services_status[service_name] = "healthy" if is_healthy else "unhealthy"
+        return is_healthy
 
-    def health_check(self) -> dict:
+    def health_check(self) -> Dict[str, str]:
         """
-        Return module health status.
+        Return ServiceMonitor module health metadata.
+
+        Returns:
+            dict: Module health report.
         """
-        return {"module": "ServiceMonitor", "status": self.status}
+        return {
+            "module": "ServiceMonitor",
+            "status": self.status,
+            "tracked_services": len(self.services_status)
+        }
