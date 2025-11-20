@@ -1,14 +1,24 @@
 """
 Entrypoint for Sensor Input Service (Camera).
 """
+
 from camera_recognizer import CameraRecognizer
 
 def main():
+    # Initialize the camera recognizer
     recognizer = CameraRecognizer()
-    frame_sample = None  # Placeholder for camera frame
+
+    # Placeholder for a frame from the camera
+    frame_sample = None  # Replace with actual frame capture logic
+
+    # Recognize activity
     result = recognizer.recognize_activity(frame_sample)
     print("Camera activity result:", result)
-    print("Health check:", recognizer.health_check())
+
+    # Health check
+    health = recognizer.health_check()
+    print("Health check:", health)
+
 
 if __name__ == "__main__":
     main()
