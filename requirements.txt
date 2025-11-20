@@ -1,0 +1,18 @@
+# Core framework
+fastapi
+uvicorn
+pydantic
+
+# GUI / Playground
+streamlit
+
+# Utilities
+python-dotenv
+rich
+psutil
+anyio
+websockets
+
+# Testing
+pytest
+pytest-asyncio
