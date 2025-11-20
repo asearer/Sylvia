@@ -22,18 +22,19 @@
   High-level user-facing or orchestrating applications.  
   Example: `sylvia_app` — the main frontend/interaction app.
 
-- **Services (`services/`)**  
-  Core modular functionality, including:  
-  - `classifier` — ML model training & inference  
-  - `personality_engine` — agent behavior and personality  
-  - `vision` — face & object recognition  
-  - `sensor_input` — camera & audio activity recognition  
-  - `voice_assistant` — speech I/O & command processing  
-  - `code_analysis` — DeepHat-powered code understanding  
-  - `research_assistant` — document ingestion & querying  
-  - `device_control` — IoT/network device integration  
-  - `self_healing` — monitors services and triggers recovery  
-  - `monitoring` — metrics collection & dashboards  
+- **Services (`services/`)**
+  Core modular functionality, including:
+  - `classifier` — ML model training & inference
+  - `personality_engine` — agent behavior and personality
+  - `vision` — face & object recognition
+  - `sensor_input` — camera & audio activity recognition
+  - `voice_assistant` — speech I/O & command processing
+  - `code_analysis` — DeepHat-powered code understanding
+  - `research_assistant` — document ingestion & querying
+  - `device_control` — IoT/network device integration
+  - `self_healing` — monitors services and triggers recovery
+  - `monitoring` — metrics collection & dashboards
+  - `playground` — safe code execution sandbox for Python, JavaScript, and Bash  
 
 Each service is **self-contained**, with its own `src/`, `tests/`, and `Dockerfile`.
 
@@ -76,7 +77,8 @@ sylvia/
 │   ├── research_assistant/
 │   ├── device_control/
 │   ├── self_healing/
-│   └── monitoring/
+│   ├── monitoring/
+│   └── playground/
 ├── libs/
 │   ├── ml-utils/
 │   ├── api-clients/
@@ -156,7 +158,47 @@ pytest libs/api-clients/tests/
 
 ---
 
-## 7️⃣ Event & Service Map (Simplified)
+## 7️⃣ Playground Service
+
+The **Playground Service** provides safe, sandboxed code execution for Python, JavaScript, and Bash with security filtering and timeout enforcement.
+
+### Features:
+- **Multi-language support**: Python, JavaScript (via py-mini-racer), and Bash
+- **Safety filtering**: Blocks dangerous operations (file I/O, network, system commands)
+- **Timeout enforcement**: Configurable execution timeouts (default 5s)
+- **Isolated execution**: Sandboxed runtimes with restricted builtins
+- **RESTful API**: FastAPI-based service on port 5002
+
+### API Endpoints:
+```bash
+# Execute code
+POST /execute
+{
+  "code": "print(2 + 2)",
+  "language": "python",
+  "timeout": 5
+}
+
+# Health check
+GET /health
+```
+
+### Docker Usage:
+```bash
+cd services/playground
+docker build -t sylvia-playground .
+docker run -p 5002:5002 sylvia-playground
+```
+
+### Safety Features:
+- Blocks: `import os`, `import sys`, `subprocess`, file operations, network calls
+- Restricted builtins in Python sandbox
+- Configurable timeout per execution
+- Returns structured results with stdout, stderr, and exit codes
+
+---
+
+## 8️⃣ Event & Service Map (Simplified)
 
 | Service            | Handles Event Types             | Consumed By                    |
 | ------------------ | ------------------------------- | ------------------------------ |
@@ -171,6 +213,7 @@ pytest libs/api-clients/tests/
 | device_control     | device.command                  | sylvia_app, voice_assistant    |
 | self_healing       | self_healing.alert              | monitoring, sylvia_app         |
 | monitoring         | metrics.update, system.health   | sylvia_app                     |
+| playground         | code.execute                    | sylvia_app, research_assistant |
 
 ---
 

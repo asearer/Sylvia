@@ -1,10 +1,11 @@
 # Core framework
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 
 # GUI / Playground
 streamlit
+py-mini-racer
 
 # Utilities
 python-dotenv

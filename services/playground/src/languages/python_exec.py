@@ -5,13 +5,13 @@ Provides a controlled interface for executing Python code inside the
 Playground Service sandbox system.
 """
 
-from ..sandbox.languages.python_runtime import PythonRuntime
+from ..sandbox.languages.python_runtime import PythonSandboxRuntime
 from ..safety import Safety
 
 
 class PythonExecutor:
     """
-    High-level executor wrapper around the PythonRuntime sandbox.
+    High-level executor wrapper around the PythonSandboxRuntime.
 
     This class ensures:
     - code is passed through safety checks
@@ -20,7 +20,7 @@ class PythonExecutor:
     """
 
     def __init__(self):
-        self.runtime = PythonRuntime()
+        self.runtime = PythonSandboxRuntime()
         self.safety = Safety()
 
     def execute(self, code: str):
@@ -38,4 +38,4 @@ class PythonExecutor:
             Contains stdout, stderr, exit_code.
         """
         safe_code = self.safety.filter_code(code)
-        return self.runtime.run(safe_code)
+        return self.runtime.execute(safe_code)
