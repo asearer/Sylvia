@@ -1,7 +1,13 @@
 # classifier/tests/test_model.py
 
 import numpy as np
-from classifier.src.model import LogisticClassifier
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from model import LogisticClassifier
 
 def test_logistic_model_training_step():
     X = np.random.randn(50, 10)

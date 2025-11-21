@@ -1,4 +1,10 @@
 import pytest
+import sys
+from pathlib import Path
+
+# Add the parent directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from base_adapter import BaseAdapter
 
 def test_base_adapter_instantiation():

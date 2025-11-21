@@ -1,11 +1,16 @@
 import streamlit as st
 from unittest.mock import patch
+import sys
+from pathlib import Path
 
-from apps.sylvia_app.src import main
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+import main
 
 def test_main_routing_chat(mocker):
     mocker.patch("streamlit.sidebar.radio", return_value="Chat")
-    mock_chat = mocker.patch("apps.sylvia_app.src.main.render_chat")
+    mock_chat = mocker.patch("main.render_chat")
 
     main
 
@@ -14,7 +19,7 @@ def test_main_routing_chat(mocker):
 
 def test_main_routing_voice(mocker):
     mocker.patch("streamlit.sidebar.radio", return_value="Voice Assistant")
-    mock_voice = mocker.patch("apps.sylvia_app.src.main.render_voice_assistant")
+    mock_voice = mocker.patch("main.render_voice_assistant")
 
     main
 

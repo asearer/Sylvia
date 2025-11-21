@@ -1,7 +1,12 @@
 import streamlit as st
 from unittest.mock import patch
+import sys
+from pathlib import Path
 
-from apps.sylvia_app.src.interface import render_self_healing_logs
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from interface import render_self_healing_logs
 
 def test_self_healing_logs_display(mocker):
     st.session_state.clear()
@@ -16,7 +21,7 @@ def test_manual_restart_triggers_callback(mocker):
     st.session_state.clear()
 
     mock_restart = mocker.patch(
-        "apps.sylvia_app.src.interface.trigger_restart"
+        "interface.trigger_restart"
     )
 
     render_self_healing_logs()

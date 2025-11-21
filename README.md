@@ -56,42 +56,167 @@ Each service is **self-contained**, with its own `src/`, `tests/`, and `Dockerfi
 ## 3️⃣ Project Structure
 
 ```
-
 sylvia/
 ├── apps/
 │   └── sylvia_app/
 │       ├── src/
 │       │   ├── main.py
 │       │   └── interface.py
-│       ├── data/
-│       ├── models/
 │       ├── tests/
-│       └── Dockerfile
+│       │   └── mocks/
+│       ├── Dockerfile
+│       └── pyproject.toml
 ├── services/
+│   ├── asset_manager/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
 │   ├── classifier/
-│   ├── personality_engine/
-│   ├── vision/
-│   ├── sensor_input/
-│   ├── voice_assistant/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   │   └── fixtures/
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── structure.md
 │   ├── code_analysis/
-│   ├── research_assistant/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   │   └── fixtures/
+│   │   └── Dockerfile
+│   ├── communication/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── data_service/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
 │   ├── device_control/
-│   ├── self_healing/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── experiment_designer/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
 │   ├── monitoring/
-│   └── playground/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── multimodal/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── personality_engine/
+│   │   ├── src/
+│   │   │   └── ai_personality/
+│   │   │       └── personality/
+│   │   ├── data/
+│   │   ├── tests/
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── structure.md
+│   ├── playground/
+│   │   ├── src/
+│   │   │   ├── executor.py
+│   │   │   ├── safety.py
+│   │   │   ├── utils.py
+│   │   │   ├── main.py
+│   │   │   ├── features/
+│   │   │   │   └── code_repl.py
+│   │   │   ├── languages/
+│   │   │   │   ├── python_exec.py
+│   │   │   │   ├── javascript_exec.py
+│   │   │   │   └── bash_exec.py
+│   │   │   └── sandbox/
+│   │   │       ├── base_runtime.py
+│   │   │       ├── runtime_manager.py
+│   │   │       ├── temp_patch.py
+│   │   │       ├── languages/
+│   │   │       │   ├── python_runtime.py
+│   │   │       │   ├── javascript_runtime.py
+│   │   │       │   └── bash_runtime.py
+│   │   │       └── adapters/
+│   │   ├── tests/
+│   │   │   ├── test_executor.py
+│   │   │   ├── test_safety.py
+│   │   │   ├── test_main.py
+│   │   │   ├── languages/
+│   │   │   └── sandbox/
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── structure.md
+│   ├── research_assistant/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── self_healing/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── sensor_input/
+│   │   ├── audio/
+│   │   │   ├── src/
+│   │   │   ├── tests/
+│   │   │   ├── Dockerfile
+│   │   │   └── requirements.txt
+│   │   ├── camera/
+│   │   │   ├── src/
+│   │   │   ├── tests/
+│   │   │   ├── Dockerfile
+│   │   │   └── requirements.txt
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── simulation/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── task_runner/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   ├── vision/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   └── Dockerfile
+│   └── voice_assistant/
+│       ├── src/
+│       ├── tests/
+│       ├── Dockerfile
+│       └── requirements.txt
 ├── libs/
-│   ├── ml-utils/
-│   ├── api-clients/
-│   ├── models/
 │   ├── adaptive_learning/
+│   ├── api-clients/
+│   │   └── messaging/
+│   │       └── tests/
+│   ├── core/
+│   │   ├── agents/
+│   │   ├── pipelines/
+│   │   ├── tests/
+│   │   │   └── core/
+│   │   ├── brain.py
+│   │   ├── context.py
+│   │   └── task_graph.py
+│   ├── ml-utils/
+│   │   └── preprocessing.py
+│   ├── models/
 │   └── utils/
 ├── experiments/
+│   └── dashboards/
+│       ├── metrics_dashboard.ipynb
+│       └── tests/
 ├── scripts/
+│   ├── deploy.sh
+│   ├── run_all_apps.sh
+│   ├── setup_env.sh
+│   └── test_docker_smoke.sh
 ├── docker-compose.yml
+├── requirements.txt
 ├── README.md
-└── .gitignore
-
-````
+├── .gitignore
+└── new-structure.md
+```
 
 - `apps/`: orchestrating or user-facing apps  
 - `services/`: modular microservices with independent entrypoints  

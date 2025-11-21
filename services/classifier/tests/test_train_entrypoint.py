@@ -1,6 +1,12 @@
 # classifier/tests/test_train_entrypoint.py
 
-import classifier.src.train as train_module
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+import train as train_module
 
 def test_train_entrypoint(monkeypatch):
     # Mock load_config

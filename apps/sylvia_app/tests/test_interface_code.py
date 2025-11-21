@@ -1,7 +1,12 @@
 import streamlit as st
 from unittest.mock import patch
+import sys
+from pathlib import Path
 
-from apps.sylvia_app.src.interface import render_code_analyzer
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from interface import render_code_analyzer
 
 def test_code_analysis_calls_service(mocker):
     st.session_state.clear()
@@ -9,7 +14,7 @@ def test_code_analysis_calls_service(mocker):
 
     mocker.patch("streamlit.text_area", return_value="print('hello')")
     mock_analyze = mocker.patch(
-        "apps.sylvia_app.src.interface.analyze_code",
+        "interface.analyze_code",
         return_value="SAFE"
     )
 

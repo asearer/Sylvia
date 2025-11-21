@@ -1,17 +1,23 @@
 import streamlit as st
 from unittest.mock import patch, MagicMock
-from apps.sylvia_app.src.interface import render_av_monitoring
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from interface import render_av_monitoring
 
 def test_av_monitoring_fetches_frame_and_audio(mocker):
     st.session_state.clear()
     st.session_state.stop_av = False
 
     mocker.patch(
-        "apps.sylvia_app.src.interface.get_camera_frame",
+        "interface.get_camera_frame",
         return_value=MagicMock()
     )
     mocker.patch(
-        "apps.sylvia_app.src.interface.get_audio_chunk",
+        "interface.get_audio_chunk",
         return_value=b"fake_audio"
     )
     mocker.patch("cv2.cvtColor", return_value=MagicMock())

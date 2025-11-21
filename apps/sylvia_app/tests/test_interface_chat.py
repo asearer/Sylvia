@@ -1,8 +1,13 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import streamlit as st
+import sys
+from pathlib import Path
 
-from apps.sylvia_app.src.interface import (
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from interface import (
     push_alert_to_chat,
     render_chat
 )
@@ -26,7 +31,7 @@ def test_push_alert_to_chat_adds_message():
 def test_render_chat_user_message_triggers_response(mocker):
     # Mock Sylvia personality engine
     mock_process = mocker.patch(
-        "apps.sylvia_app.src.interface.process_message",
+        "interface.process_message",
         return_value="Hello user!"
     )
 

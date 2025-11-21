@@ -1,7 +1,15 @@
 # classifier/tests/test_reporting.py
 
-from classifier.src.reporting import Reporter
-from classifier.src.metrics import MetricState
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add the tests directory for fixtures
+sys.path.insert(0, str(Path(__file__).parent))
+
+from reporting import Reporter
+from metrics import MetricState
 from fixtures.mock_matrix_client import MockMatrixClient
 from fixtures.mock_config import get_mock_config
 
@@ -11,7 +19,7 @@ def test_reporting_sends_matrix(monkeypatch):
 
     # Monkeypatch MatrixClientSync to our mock
     monkeypatch.setattr(
-        "classifier.src.reporting.MatrixClientSync",
+        "reporting.MatrixClientSync",
         lambda homeserver, user, password, room: MockMatrixClient()
     )
 

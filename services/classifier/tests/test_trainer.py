@@ -1,10 +1,18 @@
 # classifier/tests/test_trainer.py
 
-from classifier.src.trainer import Trainer
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add the tests directory for fixtures
+sys.path.insert(0, str(Path(__file__).parent))
+
+from trainer import Trainer
 from fixtures.mock_config import get_mock_config
 from fixtures.mock_matrix_client import MockMatrixClient
 from fixtures.mock_dataset import mock_dataset
-import classifier.src.dataset as dataset_mod
+import dataset as dataset_mod
 
 
 def test_trainer_runs_full_loop(monkeypatch):
@@ -15,7 +23,7 @@ def test_trainer_runs_full_loop(monkeypatch):
 
     # Replace MatrixClient
     monkeypatch.setattr(
-        "classifier.src.reporting.MatrixClientSync",
+        "reporting.MatrixClientSync",
         lambda homeserver, user, password, room: MockMatrixClient()
     )
 

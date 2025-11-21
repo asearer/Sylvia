@@ -1,7 +1,12 @@
 import streamlit as st
 from unittest.mock import patch, MagicMock
+import sys
+from pathlib import Path
 
-from apps.sylvia_app.src.interface import render_voice_assistant
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from interface import render_voice_assistant
 
 def test_voice_assistant_pipeline(mocker):
     st.session_state.clear()
@@ -10,17 +15,17 @@ def test_voice_assistant_pipeline(mocker):
     mocker.patch("streamlit.file_uploader", return_value=mock_file)
 
     mock_transcribe = mocker.patch(
-        "apps.sylvia_app.src.interface.transcribe_audio",
+        "interface.transcribe_audio",
         return_value="Turn on the lights"
     )
 
     mock_process = mocker.patch(
-        "apps.sylvia_app.src.interface.process_message",
+        "interface.process_message",
         return_value="Lights turned on"
     )
 
     mock_tts = mocker.patch(
-        "apps.sylvia_app.src.interface.synthesize_speech",
+        "interface.synthesize_speech",
         return_value=b'FAKE_AUDIO_BYTES'
     )
 

@@ -1,6 +1,12 @@
 import random
 from unittest.mock import patch, MagicMock
-from services.classifier.src import train
+import sys
+from pathlib import Path
+
+# Add the src directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+import train
 
 
 # Unit: Metrics calculation, logic isolation
@@ -15,7 +21,7 @@ def test_metrics_increases():
     assert len(history) == 5
 
 # Integration: Matrix event sent for each epoch
-@patch('libs.api-clients.matrix_wrapper.MatrixClientSync')
+@patch('matrix_wrapper.MatrixClientSync')
 def test_train_report_sends_metrics(mock_matrix):
     mock_matrix.return_value = MagicMock()
     train.train_and_report()
