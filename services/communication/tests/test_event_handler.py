@@ -2,6 +2,12 @@
 
 import pytest
 import asyncio
+import sys
+from pathlib import Path
+
+# Add the parent directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from event_handler import EventHandler
 from message_router import MessageRouter
 

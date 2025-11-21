@@ -3,6 +3,12 @@ Unit tests for CommandExecutor module.
 """
 
 import unittest
+import sys
+from pathlib import Path
+
+# Add the parent directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from command_executor import CommandExecutor
 from device_manager import DeviceManager
 

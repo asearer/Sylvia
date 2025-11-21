@@ -2,6 +2,14 @@
 
 import pytest
 from fastapi.testclient import TestClient
+import sys
+from pathlib import Path
+
+# Add the parent directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add the tests directory for fixtures
+sys.path.insert(0, str(Path(__file__).parent))
+
 from main import app
 from fixtures.mock_analyzer import MockAnalyzer
 import main
