@@ -11,10 +11,23 @@ This module provides the interactive Streamlit frontend for Sylvia. It integrate
 
 """
 
+"""
+Sylvia App Interface Module.
+
+This module defines the Streamlit UI components for the Sylvia application.
+It handles the rendering of various panels such as Chat, Voice Assistant,
+A/V Monitoring, Code Analysis, and Self-Healing Logs.
+
+It interacts with backend services via direct imports (currently) and manages
+session state for interactive elements.
+"""
+
 import streamlit as st
 import cv2
 import threading
 import time
+import numpy as np
+from datetime import datetime
 
 # Import Sylvia service modules
 from services.personality_engine.src.engine import process_message
@@ -86,7 +99,7 @@ def push_alert_to_chat(alert_message: str, alert_type: str = "system"):
     })
 
     # Trigger UI rerun to reflect new message
-    st.experimental_rerun()
+    st.rerun()
 
 # ----------------------------------------------------------------------
 # Function: start_alerts_listener

@@ -10,6 +10,7 @@ from interface import render_voice_assistant
 
 def test_voice_assistant_pipeline(mocker):
     st.session_state.clear()
+    st.session_state.chat_history = []
 
     mock_file = MagicMock()
     mocker.patch("streamlit.file_uploader", return_value=mock_file)
@@ -29,6 +30,7 @@ def test_voice_assistant_pipeline(mocker):
         return_value=b'FAKE_AUDIO_BYTES'
     )
 
+    mocker.patch("streamlit.button", return_value=True)
     render_voice_assistant()
 
     mock_transcribe.assert_called_once()

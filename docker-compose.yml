@@ -2,15 +2,18 @@ version: "3.8"
 
 services:
   sylvia-app:
-    build: ./apps/sylvia-app
+    build:
+      context: .
+      dockerfile: apps/sylvia_app/Dockerfile
     container_name: sylvia-app
     ports:
       - "5000:5000"
     depends_on:
       - personality-engine
+      - communication
 
   personality-engine:
-    build: ./apps/personality-engine
+    build: ./services/personality_engine
     container_name: personality-engine
     ports:
       - "5001:5001"
@@ -34,15 +37,14 @@ services:
       - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
     profiles: ["experimental"]  # only run if you opt-in
 
-  matrix-bot:
-    build: ./services/matrix
-    container_name: matrix-bot
+  communication:
+    build: ./services/communication
+    container_name: communication
     environment:
       - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
       - MATRIX_BOT_USER=${MATRIX_BOT_USER}
       - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
       - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
-    profiles: ["experimental"]
 
   dashboard:
     image: jupyter/base-notebook

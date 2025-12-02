@@ -13,6 +13,7 @@ def test_code_analysis_calls_service(mocker):
     st.session_state["Analyze Code"] = True
 
     mocker.patch("streamlit.text_area", return_value="print('hello')")
+    mocker.patch("streamlit.button", return_value=True)
     mock_analyze = mocker.patch(
         "interface.analyze_code",
         return_value="SAFE"

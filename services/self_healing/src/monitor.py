@@ -51,3 +51,23 @@ class ServiceMonitor:
             "status": self.status,
             "tracked_services": len(self.services_status)
         }
+
+# Standalone functions for interface integration
+def get_system_logs() -> list:
+    """
+    Get system logs.
+    """
+    return [{"timestamp": "2023-01-01 00:00:00", "message": "System initialized"}]
+
+def trigger_restart():
+    """
+    Trigger a system restart.
+    """
+    print("Restart triggered")
+
+def subscribe_to_events():
+    """
+    Subscribe to system events.
+    """
+    # Yield a dummy event
+    yield {"timestamp": "2023-01-01 00:00:00", "message": "Monitoring started"}

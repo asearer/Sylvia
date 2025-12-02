@@ -14,8 +14,22 @@ import json
 
 class Personality:
     """
-    Represents a personality with traits, micro-personalities, and metadata.
-    Supports hybridization, evolution, scoring, and serialization.
+    Represents a digital personality with evolving traits and micro-personalities.
+
+    This class manages the core state of the AI personality, including:
+    - Base traits (e.g., openness, conscientiousness)
+    - Micro-personalities (specialized modes)
+    - Evolution metrics (interactions, age)
+    - Hybridization logic (combining traits)
+
+    Attributes:
+        name (str): The name of the personality.
+        traits (Dict[str, float]): A dictionary of trait names and their values (0.0-1.0).
+        metadata (Dict[str, Any]): Additional metadata about the personality.
+        micro_personalities (Dict[str, Dict[str, Any]]): Stored micro-personalities.
+        active_profiles (Dict[str, float]): Currently active personality profiles and their weights.
+        interactions (int): Total number of interactions processed.
+        evolving (bool): Whether the personality automatically evolves over time.
     """
     def __init__(self, name: str, traits: Optional[Dict[str, float]] = None,
                  metadata: Optional[Dict[str, Any]] = None, evolving: bool = False):
@@ -26,6 +40,16 @@ class Personality:
         self.active_profiles: Dict[str, float] = {name: 1.0}  # default fully active
         self.interactions: int = 0
         self.evolving = evolving
+
+    # -------------------------
+    # Core methods
+    # -------------------------
+    def chat(self, user_input: str) -> str:
+        """
+        Process user input and generate a response based on personality traits.
+        """
+        # Simple dummy implementation for now
+        return f"[{self.name}] I heard: {user_input}"
 
     # -------------------------
     # Core methods

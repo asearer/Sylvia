@@ -15,8 +15,8 @@ Dependencies:
 - ai_personality.visualizer.PersonalityVisualizer
 """
 
-from ai_personality.personality import Personality
-from ai_personality.visualizer import PersonalityVisualizer
+from services.personality_engine.src.ai_personality.personality import Personality
+from services.personality_engine.src.ai_personality.personality.visualizer import PersonalityVisualizer
 
 def main():
     """Main loop for the console chat interface."""

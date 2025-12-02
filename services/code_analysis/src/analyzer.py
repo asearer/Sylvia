@@ -144,3 +144,36 @@ class CodeAnalyzer:
             "status": self.status,
             "model_loaded": self.model_loaded
         }
+
+from services.code_analysis.src.analyzer_provider import AnalyzerProvider
+
+class MockAnalyzer(AnalyzerProvider):
+    """
+    Mock implementation of AnalyzerProvider.
+    Uses basic AST parsing as a 'mock' for deep learning analysis.
+    """
+    def __init__(self):
+        self._internal_analyzer = CodeAnalyzer()
+
+    @property
+    def name(self) -> str:
+        return "MockAnalyzer"
+
+    def analyze(self, code_snippet: str) -> Dict:
+        return self._internal_analyzer.analyze_code(code_snippet)
+
+# Default provider
+_analyzer_provider: AnalyzerProvider = MockAnalyzer()
+
+def set_analyzer_provider(provider: AnalyzerProvider):
+    """
+    Set the active Analyzer provider.
+    """
+    global _analyzer_provider
+    _analyzer_provider = provider
+
+def analyze_code(code_snippet: str) -> Dict:
+    """
+    Standalone function to analyze code using the active provider.
+    """
+    return _analyzer_provider.analyze(code_snippet)

@@ -15,6 +15,7 @@ from interface import (
 @pytest.fixture(autouse=True)
 def reset_session_state():
     st.session_state.clear()
+    st.session_state.chat_history = []
     yield
 
 
@@ -40,6 +41,8 @@ def test_render_chat_user_message_triggers_response(mocker):
     st.session_state["chat_input"] = "Hello Sylvia"
 
     # Run chat render
+    mocker.patch("streamlit.button", return_value=True)
+    mocker.patch("streamlit.text_input", return_value="Hello Sylvia")
     render_chat()
 
     mock_process.assert_called_once_with("Hello Sylvia")

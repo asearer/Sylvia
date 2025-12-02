@@ -1,6 +1,11 @@
 """
-Entrypoint for the Communication Service.
-Coordinates Discord, Matrix, and other integrations.
+Communication Service Entrypoint.
+
+This module serves as the central hub for external communication integrations.
+It manages connections to platforms like Discord and Matrix, routing messages
+between them and the internal event bus.
+
+It supports an "Offline/Mock" mode for development without credentials.
 """
 
 import asyncio
@@ -73,19 +78,30 @@ class CommunicationService:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Communication Service")
-    parser.add_argument("--discord-token", type=str, required=True, help="Discord bot token")
-    parser.add_argument("--matrix-homeserver", type=str, required=True)
-    parser.add_argument("--matrix-user", type=str, required=True)
-    parser.add_argument("--matrix-password", type=str, required=True)
+    parser.add_argument("--discord-token", type=str, required=False, help="Discord bot token")
+    parser.add_argument("--matrix-homeserver", type=str, required=False)
+    parser.add_argument("--matrix-user", type=str, required=False)
+    parser.add_argument("--matrix-password", type=str, required=False)
     parser.add_argument("--matrix-room", type=str, default="lobby")
     args = parser.parse_args()
 
-    matrix_cfg = {
-        "homeserver": args.matrix_homeserver,
-        "user_id": args.matrix_user,
-        "password": args.matrix_password,
-        "default_room": args.matrix_room
-    }
+    # Check for credentials
+    if not args.discord_token or not args.matrix_homeserver:
+        logger.warning("Missing credentials. Starting in OFFLINE/MOCK mode.")
+        # In offline mode, we just keep the process alive but don't connect
+        try:
+            while True:
+                import time
+                time.sleep(3600)
+        except KeyboardInterrupt:
+            logger.info("Offline mode interrupted.")
+    else:
+        matrix_cfg = {
+            "homeserver": args.matrix_homeserver,
+            "user_id": args.matrix_user,
+            "password": args.matrix_password,
+            "default_room": args.matrix_room
+        }
 
-    service = CommunicationService(discord_token=args.discord_token, matrix_config=matrix_cfg)
-    service.start()
+        service = CommunicationService(discord_token=args.discord_token, matrix_config=matrix_cfg)
+        service.start()

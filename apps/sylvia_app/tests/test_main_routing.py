@@ -7,20 +7,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import main
+import importlib
 
 def test_main_routing_chat(mocker):
     mocker.patch("streamlit.sidebar.radio", return_value="Chat")
-    mock_chat = mocker.patch("main.render_chat")
+    mock_chat = mocker.patch("interface.render_chat")
 
-    main
+    importlib.reload(main)
 
     mock_chat.assert_called_once()
 
 
 def test_main_routing_voice(mocker):
     mocker.patch("streamlit.sidebar.radio", return_value="Voice Assistant")
-    mock_voice = mocker.patch("main.render_voice_assistant")
+    mock_voice = mocker.patch("interface.render_voice_assistant")
 
-    main
+    importlib.reload(main)
 
     mock_voice.assert_called_once()

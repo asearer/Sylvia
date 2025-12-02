@@ -11,6 +11,7 @@ from interface import render_av_monitoring
 def test_av_monitoring_fetches_frame_and_audio(mocker):
     st.session_state.clear()
     st.session_state.stop_av = False
+    st.session_state.av_status = "Idle"
 
     mocker.patch(
         "interface.get_camera_frame",

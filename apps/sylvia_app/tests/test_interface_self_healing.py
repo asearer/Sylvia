@@ -19,6 +19,7 @@ def test_self_healing_logs_display(mocker):
 
 def test_manual_restart_triggers_callback(mocker):
     st.session_state.clear()
+    st.session_state.logs = []
 
     mock_restart = mocker.patch(
         "interface.trigger_restart"

@@ -1,6 +1,6 @@
 """
-Sylvia App Entrypoint (Streamlit)
----------------------------------
+Sylvia App Entrypoint (Streamlit).
+
 This module launches the Streamlit frontend for Sylvia and provides:
 1. Sidebar navigation between features:
     - Chat
@@ -11,6 +11,8 @@ This module launches the Streamlit frontend for Sylvia and provides:
 2. Status refresh functionality
 3. Central orchestration of all interactive panels
 
+Usage:
+    streamlit run apps/sylvia_app/src/main.py
 """
 
 import streamlit as st
@@ -35,7 +37,7 @@ feature = st.sidebar.radio(
 
 # Button to refresh the current status (rerun Streamlit)
 if st.sidebar.button("Refresh Status"):
-    st.experimental_rerun()
+    st.rerun()
 
 # ----------------------------------------------------------------------
 # Main Content: Render selected feature
