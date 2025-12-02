@@ -16,6 +16,22 @@
 
 ---
 
+## 📸 Screenshots
+
+| **Chat Interface** | **Voice Assistant** |
+|:---:|:---:|
+| ![Chat Interface](screenshots/chat.png) | ![Voice Assistant](screenshots/voice_assistant.png) |
+
+| **A/V Monitoring** | **Code Analyzer** |
+|:---:|:---:|
+| ![A/V Monitoring](screenshots/audio_video_monitoring.png) | ![Code Analyzer](screenshots/code_analyzer.png) |
+
+| **Self-Healing Logs** |
+|:---:|
+| ![Self-Healing Logs](screenshots/self_healing_logs.png) |
+
+---
+
 ## 1️⃣ Apps vs. Services
 
 - **Apps (`apps/`)**  
