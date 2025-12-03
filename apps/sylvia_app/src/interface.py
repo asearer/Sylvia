@@ -259,8 +259,22 @@ def render_av_monitoring():
     
     # Audio Visualizer
     st.markdown("### Audio Spectrum")
-    audio_data = get_audio_visualizer_data()
-    st.bar_chart(audio_data, height=150)
+    
+    # Audio Controls
+    col_audio1, col_audio2 = st.columns([1, 2])
+    with col_audio1:
+        audio_source = st.selectbox("Audio Source", ["Simulated", "Browser Microphone"], index=0)
+    
+    audio_data = None
+    if audio_source == "Browser Microphone":
+        audio_input = st.audio_input("Record Audio")
+        if audio_input:
+            audio_data = audio_input.getvalue()
+    
+    # Get visualizer data (real or simulated)
+    chart_data = get_audio_visualizer_data(audio_data if audio_source == "Browser Microphone" else None)
+    
+    st.bar_chart(chart_data, height=150)
     
     # Controls
     col1, col2 = st.columns(2)
