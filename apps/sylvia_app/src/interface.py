@@ -209,38 +209,40 @@ def render_voice_assistant():
 # ----------------------------------------------------------------------
 # Function: render_av_monitoring
 # ----------------------------------------------------------------------
+@st.fragment(run_every=0.1)
 def render_av_monitoring():
     """
     Render Live Audio/Video Monitoring panel:
     - Displays live camera feed
     - Streams live audio chunks
-    - Uses background thread for continuous updates
+    - Uses st.fragment for continuous updates without full page reload
     """
     st.header("📹 Live Audio/Video Monitoring")
+    
+    # Control buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start Monitoring"):
+            st.session_state.av_status = "Active"
+            st.session_state.stop_av = False
+            
+    with col2:
+        if st.button("Stop Monitoring"):
+            st.session_state.av_status = "Idle"
+            st.session_state.stop_av = True
+            
     st.write(f"Feed status: {st.session_state.av_status}")
-    video_placeholder = st.empty()
-    audio_placeholder = st.empty()
+    
+    if st.session_state.av_status == "Active":
+        frame = get_camera_frame()
+        if frame is not None:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            st.image(frame, channels="RGB", use_column_width=True)
 
-    def av_loop():
-        while not st.session_state.stop_av:
-            frame = get_camera_frame()
-            if frame is not None:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                video_placeholder.image(frame, channels="RGB")
-
-            audio_bytes = get_audio_chunk()
-            if audio_bytes:
-                audio_placeholder.audio(audio_bytes, format="audio/wav")
-            time.sleep(0.1)
-
-    if st.button("Start Live Monitoring"):
-        st.session_state.av_status = "Active"
-        st.session_state.stop_av = False
-        threading.Thread(target=av_loop, daemon=True).start()
-
-    if st.button("Stop Live Monitoring"):
-        st.session_state.stop_av = True
-        st.session_state.av_status = "Idle"
+        audio_bytes = get_audio_chunk()
+        if audio_bytes:
+            # Note: Frequent audio updates might cause stuttering in Streamlit
+            st.audio(audio_bytes, format="audio/wav")
 
 # ----------------------------------------------------------------------
 # Function: render_code_analyzer

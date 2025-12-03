@@ -2,18 +2,24 @@
 Sylvia App Entrypoint (Streamlit).
 
 This module launches the Streamlit frontend for Sylvia and provides:
-1. Sidebar navigation between features:
-    - Chat
-    - Voice Assistant
-    - Live A/V Monitoring
-    - Code Analyzer
-    - Self-Healing / System Logs
-2. Status refresh functionality
-3. Central orchestration of all interactive panels
+1. Unified Dashboard Layout:
+    - Chat (Left Column)
+    - A/V Monitoring & Tools (Right Column)
+2. Central orchestration of all interactive panels
 
 Usage:
     streamlit run apps/sylvia_app/src/main.py
 """
+
+import sys
+import os
+from pathlib import Path
+
+# Add project root to sys.path to allow importing 'services'
+# We need to go up 4 levels: src -> sylvia_app -> apps -> Sylvia (Root)
+project_root = Path(__file__).resolve().parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
 
 import streamlit as st
 from interface import (
@@ -25,35 +31,49 @@ from interface import (
 )
 
 # ----------------------------------------------------------------------
-# Sidebar: Feature Selection
+# Page Configuration
 # ----------------------------------------------------------------------
-st.sidebar.title("Sylvia Controls")
-
-# Radio button menu for selecting the feature panel
-feature = st.sidebar.radio(
-    "Select Feature",
-    ["Chat", "Voice Assistant", "A/V Monitoring", "Code Analyzer", "Self-Healing Logs"]
+st.set_page_config(
+    page_title="Sylvia Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Button to refresh the current status (rerun Streamlit)
-if st.sidebar.button("Refresh Status"):
+# ----------------------------------------------------------------------
+# Sidebar: Global Controls & Status
+# ----------------------------------------------------------------------
+st.sidebar.title("Sylvia System")
+if st.sidebar.button("Refresh System"):
     st.rerun()
 
+st.sidebar.markdown("---")
+st.sidebar.info("System Status: Online")
+
 # ----------------------------------------------------------------------
-# Main Content: Render selected feature
+# Main Content: Unified Grid Layout
 # ----------------------------------------------------------------------
-if feature == "Chat":
-    # Interactive chat with alerts, emojis, colors, and action buttons
+
+# Create two main columns
+left_col, right_col = st.columns([0.6, 0.4], gap="medium")
+
+with left_col:
+    # Chat is the primary interface
     render_chat()
-elif feature == "Voice Assistant":
-    # Voice input/output panel
-    render_voice_assistant()
-elif feature == "A/V Monitoring":
-    # Live camera/audio monitoring panel
+
+with right_col:
+    # A/V Monitoring is always visible at the top
     render_av_monitoring()
-elif feature == "Code Analyzer":
-    # DeepHat-powered code analysis panel
-    render_code_analyzer()
-elif feature == "Self-Healing Logs":
-    # Display system/self-healing logs and restart controls
-    render_self_healing_logs()
+    
+    st.markdown("---")
+    
+    # Other tools are organized in tabs to save space but remain accessible
+    tab1, tab2, tab3 = st.tabs(["Voice", "Code", "Logs"])
+    
+    with tab1:
+        render_voice_assistant()
+        
+    with tab2:
+        render_code_analyzer()
+        
+    with tab3:
+        render_self_healing_logs()
