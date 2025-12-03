@@ -26,6 +26,7 @@ import streamlit as st
 import cv2
 import threading
 import time
+import cv2
 import numpy as np
 from datetime import datetime
 
@@ -33,7 +34,7 @@ from datetime import datetime
 from services.personality_engine.src.engine import process_message
 from services.voice_assistant.src.speech_to_text import transcribe_audio
 from services.voice_assistant.src.text_to_speech import synthesize_speech
-from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip
+from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip, list_cameras
 from services.sensor_input.audio.src.main import get_audio_chunk, get_audio_alerts, save_audio, get_audio_visualizer_data
 from services.code_analysis.src.analyzer import analyze_code
 from services.self_healing.src.monitor import get_system_logs, trigger_restart, subscribe_to_events, get_system_metrics
@@ -228,8 +229,33 @@ def render_av_monitoring():
     """
     st.subheader("Live A/V Monitoring")
     
-    # Camera Feed Placeholder
-    st.image("https://placehold.co/640x360/black/white?text=Camera+Feed+Offline", caption="Camera Feed (Simulated)", use_column_width=True)
+    # Camera Controls
+    col_cam1, col_cam2 = st.columns([1, 2])
+    with col_cam1:
+        camera_power = st.toggle("Camera Power", value=True)
+    with col_cam2:
+        cameras = list_cameras()
+        selected_camera = st.selectbox("Camera Source", cameras, index=0)
+
+    # Camera Feed
+    if camera_power:
+        if selected_camera == "Browser Camera":
+            # Use Streamlit's native camera input for browser access
+            img_file_buffer = st.camera_input("Live Feed (Browser)")
+            if img_file_buffer is not None:
+                # To read image file buffer with OpenCV:
+                bytes_data = img_file_buffer.getvalue()
+                cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+                # Display processed frame if needed, or just let st.camera_input handle the preview
+                # For consistency, we could process it here
+        else:
+            # Backend/Simulated Camera
+            frame = get_camera_frame(selected_camera)
+            # Convert BGR to RGB for Streamlit
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            st.image(frame_rgb, caption=f"Live Feed: {selected_camera}", use_column_width=True)
+    else:
+        st.image("https://placehold.co/640x360/black/white?text=Camera+Feed+Offline", caption="Camera Feed (Offline)", use_column_width=True)
     
     # Audio Visualizer
     st.markdown("### Audio Spectrum")
