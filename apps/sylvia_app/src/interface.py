@@ -34,23 +34,28 @@ from services.personality_engine.src.engine import process_message
 from services.voice_assistant.src.speech_to_text import transcribe_audio
 from services.voice_assistant.src.text_to_speech import synthesize_speech
 from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip
-from services.sensor_input.audio.src.main import get_audio_chunk, get_audio_alerts, save_audio
+from services.sensor_input.audio.src.main import get_audio_chunk, get_audio_alerts, save_audio, get_audio_visualizer_data
 from services.code_analysis.src.analyzer import analyze_code
-from services.self_healing.src.monitor import get_system_logs, trigger_restart, subscribe_to_events
+from services.self_healing.src.monitor import get_system_logs, trigger_restart, subscribe_to_events, get_system_metrics
 
 # ----------------------------------------------------------------------
 # Session State Initialization
 # ----------------------------------------------------------------------
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []  # Stores all chat messages and alerts
-if "av_status" not in st.session_state:
-    st.session_state.av_status = "Idle"  # Status of live A/V monitoring
-if "stop_av" not in st.session_state:
-    st.session_state.stop_av = False  # Flag to stop A/V monitoring threads
-if "logs" not in st.session_state:
-    st.session_state.logs = []  # Stores system/self-healing logs
-if "alerts_thread_started" not in st.session_state:
-    st.session_state.alerts_thread_started = False  # Ensures background thread starts once
+# ----------------------------------------------------------------------
+# Session State Initialization
+# ----------------------------------------------------------------------
+def initialize_session_state():
+    """Initialize Streamlit session state variables if they don't exist."""
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []  # Stores all chat messages and alerts
+    if "av_status" not in st.session_state:
+        st.session_state.av_status = "Idle"  # Status of live A/V monitoring
+    if "stop_av" not in st.session_state:
+        st.session_state.stop_av = False  # Flag to stop A/V monitoring threads
+    if "logs" not in st.session_state:
+        st.session_state.logs = []  # Stores system/self-healing logs
+    if "alerts_thread_started" not in st.session_state:
+        st.session_state.alerts_thread_started = False  # Ensures background thread starts once
 
 # ----------------------------------------------------------------------
 # Function: push_alert_to_chat
@@ -134,10 +139,17 @@ def start_alerts_listener():
 
     threading.Thread(target=alerts_loop, daemon=True).start()
 
-# Start the alert listener once
-if not st.session_state.alerts_thread_started:
-    start_alerts_listener()
-    st.session_state.alerts_thread_started = True
+# ----------------------------------------------------------------------
+# Function: start_background_threads
+# ----------------------------------------------------------------------
+def start_background_threads():
+    """
+    Start background threads for alerts and monitoring.
+    Should be called after session state initialization.
+    """
+    if not st.session_state.alerts_thread_started:
+        start_alerts_listener()
+        st.session_state.alerts_thread_started = True
 
 # ----------------------------------------------------------------------
 # Function: render_chat
@@ -212,21 +224,36 @@ def render_voice_assistant():
 @st.fragment(run_every=0.1)
 def render_av_monitoring():
     """
-    Render Live Audio/Video Monitoring panel:
-    - Displays live camera feed
-    - Streams live audio chunks
-    - Uses st.fragment for continuous updates without full page reload
+    Render the A/V Monitoring panel.
     """
-    st.header("📹 Live Audio/Video Monitoring")
+    st.subheader("Live A/V Monitoring")
     
-    # Control buttons
+    # Camera Feed Placeholder
+    st.image("https://placehold.co/640x360/black/white?text=Camera+Feed+Offline", caption="Camera Feed (Simulated)", use_column_width=True)
+    
+    # Audio Visualizer
+    st.markdown("### Audio Spectrum")
+    audio_data = get_audio_visualizer_data()
+    st.bar_chart(audio_data, height=150)
+    
+    # Controls
     col1, col2 = st.columns(2)
     with col1:
+        if st.button("Record Clip"):
+            record_clip()
+            st.success("Clip recorded!")
+    with col2:
+        if st.button("Mute Audio"):
+            st.info("Audio muted.")
+
+    # Monitoring Start/Stop Controls
+    col3, col4 = st.columns(2)
+    with col3:
         if st.button("Start Monitoring"):
             st.session_state.av_status = "Active"
             st.session_state.stop_av = False
             
-    with col2:
+    with col4:
         if st.button("Stop Monitoring"):
             st.session_state.av_status = "Idle"
             st.session_state.stop_av = True
@@ -265,19 +292,31 @@ def render_code_analyzer():
 # ----------------------------------------------------------------------
 def render_self_healing_logs():
     """
-    Render the Self-Healing Logs panel:
-    - Displays latest system/self-healing logs
-    - Allows triggering manual service restart
+    Render the Self-Healing Logs panel with system metrics.
     """
-    st.header("⚡ Self-Healing / System Logs")
-    log_placeholder = st.empty()
-
-    if st.session_state.logs:
-        with log_placeholder.container():
-            for log in st.session_state.logs[-20:]:
-                st.markdown(f"<span style='color:red'>{log['timestamp']} - {log['message']}</span>", unsafe_allow_html=True)
-
-    if st.button("Trigger Restart"):
+    st.subheader("System Health & Logs")
+    
+    # System Metrics
+    metrics = get_system_metrics()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("CPU Usage", f"{metrics['cpu_percent']}%")
+    with col2:
+        st.metric("Memory Usage", f"{metrics['memory_percent']}%")
+    with col3:
+        st.metric("Disk Usage", f"{metrics['disk_percent']}%")
+        
+    st.markdown("---")
+    st.markdown("### Recent Logs")
+    
+    logs = get_system_logs()
+    if logs:
+        for log in logs:
+            st.text(f"[{log['timestamp']}] {log['message']}")
+    else:
+        st.info("No logs available.")
+    
+    if st.button("Trigger System Restart"):
         trigger_restart()
-        push_alert_to_chat("Manual restart triggered", "self_healing")
         st.success("Restart command sent!")

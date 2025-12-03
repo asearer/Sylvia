@@ -11,6 +11,9 @@ services:
     depends_on:
       - personality-engine
       - communication
+    volumes:
+      - ./apps/sylvia_app/src:/app/src
+      - ./services:/app/services
 
   personality-engine:
     build: ./services/personality_engine

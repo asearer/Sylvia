@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements for the app
 COPY apps/sylvia_app/requirements.txt ./requirements.txt
+
+# Install CPU-only PyTorch first to save space (avoiding CUDA binaries)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the app and services (since app imports services)

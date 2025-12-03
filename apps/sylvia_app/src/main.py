@@ -14,6 +14,10 @@ Usage:
 import sys
 import os
 from pathlib import Path
+import logging
+
+# Configure logging immediately to capture import-time logs
+logging.basicConfig(level=logging.INFO)
 
 # Add project root to sys.path to allow importing 'services'
 # We need to go up 4 levels: src -> sylvia_app -> apps -> Sylvia (Root)
@@ -27,7 +31,9 @@ from interface import (
     render_voice_assistant,
     render_av_monitoring,
     render_code_analyzer,
-    render_self_healing_logs
+    render_self_healing_logs,
+    initialize_session_state,
+    start_background_threads
 )
 
 # ----------------------------------------------------------------------
@@ -38,6 +44,70 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ----------------------------------------------------------------------
+# Initialization
+# ----------------------------------------------------------------------
+initialize_session_state()
+start_background_threads()
+
+# ----------------------------------------------------------------------
+# Custom CSS for VSCode Aesthetic
+# ----------------------------------------------------------------------
+st.markdown("""
+<style>
+    /* Global Font */
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Remove rounded corners from buttons and inputs */
+    .stButton > button {
+        border-radius: 0px;
+        border: 1px solid #3e3e42;
+        background-color: #0e639c;
+        color: white;
+    }
+    .stButton > button:hover {
+        background-color: #1177bb;
+        border-color: #3e3e42;
+    }
+    .stTextInput > div > div > input {
+        border-radius: 0px;
+        background-color: #3c3c3c;
+        color: #cccccc;
+        border: 1px solid #3c3c3c;
+    }
+    
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: #252526;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+        background-color: #252526;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 0px;
+        background-color: #2d2d2d;
+        color: #969696;
+        padding: 4px 16px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #1e1e1e;
+        color: white;
+        border-top: 1px solid #007acc;
+    }
+    
+    /* Reduce padding for a denser "IDE" feel */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------
 # Sidebar: Global Controls & Status

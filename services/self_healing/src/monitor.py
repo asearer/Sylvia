@@ -52,12 +52,26 @@ class ServiceMonitor:
             "tracked_services": len(self.services_status)
         }
 
+import psutil
+import time
+
 # Standalone functions for interface integration
 def get_system_logs() -> list:
     """
     Get system logs.
     """
-    return [{"timestamp": "2023-01-01 00:00:00", "message": "System initialized"}]
+    # Return a sample log
+    return [{"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "message": "System running normally"}]
+
+def get_system_metrics() -> Dict[str, Any]:
+    """
+    Get real-time system metrics using psutil.
+    """
+    return {
+        "cpu_percent": psutil.cpu_percent(interval=None),
+        "memory_percent": psutil.virtual_memory().percent,
+        "disk_percent": psutil.disk_usage('/').percent
+    }
 
 def trigger_restart():
     """
