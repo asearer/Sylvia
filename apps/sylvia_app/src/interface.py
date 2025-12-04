@@ -28,10 +28,11 @@ import threading
 import time
 import cv2
 import numpy as np
+import pandas as pd
 from datetime import datetime
 
 # Import Sylvia service modules
-from services.personality_engine.src.engine import process_message
+from services.personality_engine.src.engine import process_message, set_llm_provider, get_analytics_data
 from services.voice_assistant.src.speech_to_text import transcribe_audio
 from services.voice_assistant.src.text_to_speech import synthesize_speech
 from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip, list_cameras
@@ -151,6 +152,39 @@ def start_background_threads():
     if not st.session_state.alerts_thread_started:
         start_alerts_listener()
         st.session_state.alerts_thread_started = True
+
+# ----------------------------------------------------------------------
+# Function: render_sidebar
+# ----------------------------------------------------------------------
+def render_sidebar():
+    """
+    Render the global sidebar with settings and controls.
+    """
+    with st.sidebar:
+        st.title("Sylvia Control")
+        
+        # Model Settings
+        with st.expander("Model Settings", expanded=False):
+            provider = st.selectbox("LLM Provider", ["Local (DistilGPT2)", "Gemini", "OpenAI", "Anthropic"])
+            api_key = ""
+            if provider != "Local (DistilGPT2)":
+                api_key = st.text_input(f"{provider} API Key", type="password")
+            
+            if st.button("Update Model"):
+                # Map selection to internal names
+                provider_map = {
+                    "Local (DistilGPT2)": "Local",
+                    "Gemini": "Gemini",
+                    "OpenAI": "OpenAI",
+                    "Anthropic": "Anthropic"
+                }
+                set_llm_provider(provider_map[provider], api_key)
+                st.success(f"Switched to {provider}")
+
+        st.markdown("---")
+        if st.button("Clear Chat History"):
+            st.session_state.chat_history = []
+            st.rerun()
 
 # ----------------------------------------------------------------------
 # Function: render_chat
@@ -328,13 +362,13 @@ def render_code_analyzer():
         st.code(result)
 
 # ----------------------------------------------------------------------
-# Function: render_self_healing_logs
+# Function: render_system_health_and_logs
 # ----------------------------------------------------------------------
-def render_self_healing_logs():
+def render_system_health_and_logs():
     """
-    Render the Self-Healing Logs panel with system metrics.
+    Render the System Health & Logs panel with system metrics.
     """
-    st.subheader("System Health & Logs")
+    st.subheader("System Health")
     
     # System Metrics
     metrics = get_system_metrics()

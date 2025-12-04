@@ -5,4 +5,8 @@ requests
 pytest-mock
 matplotlib
 transformers
+torch
 psutil
+google-generativeai
+openai
+anthropic

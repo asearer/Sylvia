@@ -22,6 +22,104 @@ logger = logging.getLogger(__name__)
 from transformers import pipeline
 import torch
 
+import google.generativeai as genai
+import openai
+import anthropic
+import time
+from datetime import datetime
+
+# --- Analytics ---
+class AnalyticsTracker:
+    def __init__(self):
+        self.logs = []
+
+    def log_interaction(self, service: str, model: str, input_text: str, output_text: str, latency: float):
+        # Estimate tokens (rough approximation: 4 chars per token)
+        input_tokens = len(input_text) // 4
+        output_tokens = len(output_text) // 4
+        
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "service": service,
+            "model": model,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "latency": latency
+        }
+        self.logs.append(entry)
+        # Keep only last 1000 logs to avoid memory issues in this demo
+        if len(self.logs) > 1000:
+            self.logs.pop(0)
+
+    def get_stats(self):
+        return self.logs
+
+_analytics = AnalyticsTracker()
+
+def get_analytics_data():
+    return _analytics.get_stats()
+
+# --- Providers ---
+
+class GeminiLLM(LLMProvider):
+    def __init__(self, api_key: str):
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-pro')
+        self._api_key = api_key
+
+    @property
+    def name(self) -> str:
+        return "Gemini Pro"
+
+    def generate_response(self, prompt: str, context: list = None) -> str:
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            logger.error(f"Gemini Error: {e}")
+            return f"Error from Gemini: {e}"
+
+class OpenAILLM(LLMProvider):
+    def __init__(self, api_key: str):
+        self.client = openai.OpenAI(api_key=api_key)
+        self._api_key = api_key
+
+    @property
+    def name(self) -> str:
+        return "GPT-3.5 Turbo"
+
+    def generate_response(self, prompt: str, context: list = None) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"OpenAI Error: {e}")
+            return f"Error from OpenAI: {e}"
+
+class AnthropicLLM(LLMProvider):
+    def __init__(self, api_key: str):
+        self.client = anthropic.Anthropic(api_key=api_key)
+        self._api_key = api_key
+
+    @property
+    def name(self) -> str:
+        return "Claude 3 Sonnet"
+
+    def generate_response(self, prompt: str, context: list = None) -> str:
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return message.content[0].text
+        except Exception as e:
+            logger.error(f"Anthropic Error: {e}")
+            return f"Error from Anthropic: {e}"
+
 class HuggingFaceLLM(LLMProvider):
     """
     Real implementation using Hugging Face 'distilgpt2' for chat.
@@ -83,26 +181,42 @@ _engine_persona = Personality("Sylvia", evolving=True)
 # Default provider
 _llm_provider: LLMProvider = HuggingFaceLLM()
 
-def set_llm_provider(provider: LLMProvider):
+def set_llm_provider(provider_type: str, api_key: str = None):
     """
     Set the active LLM provider.
     """
     global _llm_provider
-    _llm_provider = provider
-    logger.info(f"LLM provider set to {provider.name}")
+    
+    if provider_type == "Gemini":
+        _llm_provider = GeminiLLM(api_key)
+    elif provider_type == "OpenAI":
+        _llm_provider = OpenAILLM(api_key)
+    elif provider_type == "Anthropic":
+        _llm_provider = AnthropicLLM(api_key)
+    else:
+        # Fallback to local
+        if not isinstance(_llm_provider, HuggingFaceLLM):
+            _llm_provider = HuggingFaceLLM()
+            
+    logger.info(f"LLM provider set to {_llm_provider.name}")
 
-def process_message(message: str) -> str:
+def process_message(message: str, service_name: str = "chat") -> str:
     """
     Process a message using the active LLM provider.
     
     Args:
         message (str): User message.
-        
-    Returns:
-        str: Generated response.
+        service_name (str): Name of the service calling this (for analytics).
     """
-    # In a real scenario, we would retrieve context/history here
-    return _llm_provider.generate_response(message)
+    start_time = time.time()
+    response = _llm_provider.generate_response(message)
+    end_time = time.time()
+    latency = end_time - start_time
+    
+    # Log analytics
+    _analytics.log_interaction(service_name, _llm_provider.name, message, response, latency)
+    
+    return response
 
 
 if __name__ == "__main__":

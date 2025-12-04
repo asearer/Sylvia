@@ -4,3 +4,6 @@ pydantic
 streamlit
 python-dotenv
 matplotlib
+google-generativeai
+openai
+anthropic

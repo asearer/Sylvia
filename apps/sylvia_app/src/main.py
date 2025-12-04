@@ -27,11 +27,12 @@ if str(project_root) not in sys.path:
 
 import streamlit as st
 from interface import (
+    render_sidebar,
     render_chat,
     render_voice_assistant,
     render_av_monitoring,
     render_code_analyzer,
-    render_self_healing_logs,
+    render_system_health_and_logs,
     initialize_session_state,
     start_background_threads
 )
@@ -110,14 +111,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------
-# Sidebar: Global Controls & Status
+# Sidebar
 # ----------------------------------------------------------------------
-st.sidebar.title("Sylvia System")
-if st.sidebar.button("Refresh System"):
-    st.rerun()
-
-st.sidebar.markdown("---")
-st.sidebar.info("System Status: Online")
+render_sidebar()
 
 # ----------------------------------------------------------------------
 # Main Content: Unified Grid Layout
@@ -136,14 +132,15 @@ with right_col:
     
     st.markdown("---")
     
-    # Other tools are organized in tabs to save space but remain accessible
-    tab1, tab2, tab3 = st.tabs(["Voice", "Code", "Logs"])
+    # Other tools are organized in blocks
+    st.markdown("### Voice Assistant")
+    render_voice_assistant()
     
-    with tab1:
-        render_voice_assistant()
-        
-    with tab2:
-        render_code_analyzer()
-        
-    with tab3:
-        render_self_healing_logs()
+    st.markdown("---")
+    
+    st.markdown("### Code Analyzer")
+    render_code_analyzer()
+    
+    st.markdown("---")
+    
+    render_system_health_and_logs()
