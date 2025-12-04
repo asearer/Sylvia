@@ -59,6 +59,17 @@ _analytics = AnalyticsTracker()
 def get_analytics_data():
     return _analytics.get_stats()
 
+# Global system prompt
+_system_prompt = "You are Sylvia, a helpful and intelligent AI assistant."
+
+def set_system_prompt(prompt: str):
+    """
+    Set the global system prompt (personality instructions).
+    """
+    global _system_prompt
+    _system_prompt = prompt
+    logger.info(f"System prompt updated: {prompt[:50]}...")
+
 # --- Providers ---
 
 class GeminiLLM(LLMProvider):
@@ -73,7 +84,9 @@ class GeminiLLM(LLMProvider):
 
     def generate_response(self, prompt: str, context: list = None) -> str:
         try:
-            response = self.model.generate_content(prompt)
+            # Prepend system prompt as Gemini Pro via API is often chat-optimized
+            full_prompt = f"{_system_prompt}\n\nUser: {prompt}"
+            response = self.model.generate_content(full_prompt)
             return response.text
         except Exception as e:
             logger.error(f"Gemini Error: {e}")
@@ -92,7 +105,10 @@ class OpenAILLM(LLMProvider):
         try:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[
+                    {"role": "system", "content": _system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -113,6 +129,7 @@ class AnthropicLLM(LLMProvider):
             message = self.client.messages.create(
                 model="claude-3-sonnet-20240229",
                 max_tokens=1024,
+                system=_system_prompt,
                 messages=[{"role": "user", "content": prompt}]
             )
             return message.content[0].text
@@ -163,11 +180,12 @@ class HuggingFaceLLM(LLMProvider):
     def generate_response(self, prompt: str, context: list = None) -> str:
         if self.pipeline:
             try:
-                # Simple generation
-                response = self.pipeline(prompt, num_return_sequences=1)[0]['generated_text']
+                # Simple generation with prepended system prompt
+                full_prompt = f"{_system_prompt}\n\nUser: {prompt}\nAssistant:"
+                response = self.pipeline(full_prompt, num_return_sequences=1)[0]['generated_text']
                 # Basic cleanup: remove the prompt from the response if it's included
-                if response.startswith(prompt):
-                    response = response[len(prompt):].strip()
+                if response.startswith(full_prompt):
+                    response = response[len(full_prompt):].strip()
                 return response
             except Exception as e:
                 logger.error(f"Chat Error: {e}")

@@ -32,7 +32,7 @@ import pandas as pd
 from datetime import datetime
 
 # Import Sylvia service modules
-from services.personality_engine.src.engine import process_message, set_llm_provider, get_analytics_data
+from services.personality_engine.src.engine import process_message, set_llm_provider, get_analytics_data, set_system_prompt
 from services.voice_assistant.src.speech_to_text import transcribe_audio
 from services.voice_assistant.src.text_to_speech import synthesize_speech
 from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip, list_cameras
@@ -180,6 +180,33 @@ def render_sidebar():
                 }
                 set_llm_provider(provider_map[provider], api_key)
                 st.success(f"Switched to {provider}")
+
+        # Personality Settings
+        with st.expander("Personality Settings", expanded=False):
+            presets = {
+                "Professional": "You are Sylvia, a helpful, professional, and concise AI assistant.",
+                "Friendly": "You are Sylvia, a warm, friendly, and enthusiastic AI companion. You use emojis and casual language.",
+                "Sarcastic": "You are Sylvia. You are helpful but extremely sarcastic and dry. You like to make witty observations.",
+                "Coder": "You are Sylvia, an expert software engineer. You focus on code quality, best practices, and technical details. You are concise.",
+                "Custom": ""
+            }
+            
+            preset_name = st.selectbox("Personality Preset", list(presets.keys()))
+            
+            # Initialize session state for custom prompt if not exists
+            if "system_prompt" not in st.session_state:
+                st.session_state.system_prompt = presets["Professional"]
+            
+            # Update prompt text based on preset selection (if not custom)
+            if preset_name != "Custom":
+                st.session_state.system_prompt = presets[preset_name]
+
+            system_prompt = st.text_area("System Prompt", value=st.session_state.system_prompt, height=100)
+            
+            if st.button("Update Personality"):
+                set_system_prompt(system_prompt)
+                st.session_state.system_prompt = system_prompt # Sync state
+                st.success(f"Personality updated to {preset_name}")
 
         st.markdown("---")
         if st.button("Clear Chat History"):
