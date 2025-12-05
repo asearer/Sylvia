@@ -36,23 +36,56 @@ class MockSTT(STTProvider):
 # -------------------------------------------------------------------------
 # Future: WhisperSTT Implementation
 # -------------------------------------------------------------------------
-# class WhisperSTT(STTProvider):
-#     def __init__(self, model_size="base"):
-#         import whisper
-#         self.model = whisper.load_model(model_size)
-#
-#     @property
-#     def name(self) -> str:
-#         return "WhisperSTT"
-#
-#     def transcribe(self, audio_data: bytes) -> str:
-#         # Save bytes to temp file or process in-memory
-#         result = self.model.transcribe(audio_path)
-#         return result["text"]
+class WhisperSTT(STTProvider):
+    def __init__(self, model_size="openai/whisper-tiny"):
+        from transformers import pipeline
+        import torch
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        logger.info(f"Loading Whisper model ({model_size}) on {device}...")
+        self.pipe = pipeline(
+            "automatic-speech-recognition",
+            model=model_size,
+            device=device
+        )
+        logger.info("Whisper model loaded.")
+
+    @property
+    def name(self) -> str:
+        return "WhisperSTT (Tiny)"
+
+    def transcribe(self, audio_data: bytes) -> str:
+        # Whisper pipeline expects numpy array or file path.
+        # For simplicity in this demo, we'll assume audio_data is a file path string 
+        # OR we need to convert bytes to numpy. 
+        # Given the current interface likely passes bytes, let's handle bytes -> numpy if possible,
+        # but standard pipeline usually takes a filename or a dataset item.
+        # Let's try treating audio_data as a filename if it's a string, or write to temp if bytes.
+        
+        import tempfile
+        import os
+        
+        try:
+            if isinstance(audio_data, str) and os.path.exists(audio_data):
+                result = self.pipe(audio_data)
+                return result["text"]
+            
+            # If bytes, write to temp file
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp.write(audio_data)
+                tmp_path = tmp.name
+            
+            result = self.pipe(tmp_path)
+            os.remove(tmp_path)
+            return result["text"]
+            
+        except Exception as e:
+            logger.error(f"Whisper Transcription Error: {e}")
+            return f"Error: {e}"
 # -------------------------------------------------------------------------
 
 # Default instance
-_stt_provider: STTProvider = MockSTT()
+_stt_provider: STTProvider = WhisperSTT()
 
 def set_stt_provider(provider: STTProvider):
     """

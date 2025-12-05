@@ -35,7 +35,7 @@ from datetime import datetime
 from services.personality_engine.src.engine import process_message, set_llm_provider, get_analytics_data, set_system_prompt
 from services.voice_assistant.src.speech_to_text import transcribe_audio
 from services.voice_assistant.src.text_to_speech import synthesize_speech
-from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip, list_cameras
+from services.sensor_input.camera.src.main import get_camera_frame, get_activity_alerts, record_clip, list_cameras, detect_objects_in_frame
 from services.sensor_input.audio.src.main import get_audio_chunk, get_audio_alerts, save_audio, get_audio_visualizer_data
 from services.code_analysis.src.analyzer import analyze_code
 from services.self_healing.src.monitor import get_system_logs, trigger_restart, subscribe_to_events, get_system_metrics
@@ -108,6 +108,11 @@ def push_alert_to_chat(alert_message: str, alert_type: str = "system"):
     # Trigger UI rerun to reflect new message
     st.rerun()
 
+import queue
+
+# Global queue for thread-safe alert handling
+alert_queue = queue.Queue()
+
 # ----------------------------------------------------------------------
 # Function: start_alerts_listener
 # ----------------------------------------------------------------------
@@ -118,24 +123,23 @@ def start_alerts_listener():
     - Camera motion/activity alerts
     - Audio alerts
 
-    Alerts are pushed to the chat panel in real time with contextual actions.
+    Alerts are put into a thread-safe queue to be processed by the main thread.
     """
     def alerts_loop():
         # Self-healing/system events
         for event in subscribe_to_events():
-            st.session_state.logs.append(event)
-            push_alert_to_chat(event['message'], alert_type="self_healing")
+            alert_queue.put({"type": "self_healing", "payload": event})
             time.sleep(0.1)
 
         # Continuous camera/audio monitoring
         while True:
             cam_alert = get_activity_alerts()
             if cam_alert:
-                push_alert_to_chat(cam_alert, "camera")
+                alert_queue.put({"type": "camera", "payload": cam_alert})
 
             audio_alert = get_audio_alerts()
             if audio_alert:
-                push_alert_to_chat(audio_alert, "audio")
+                alert_queue.put({"type": "audio", "payload": audio_alert})
 
             time.sleep(1)
 
@@ -290,13 +294,89 @@ def render_av_monitoring():
     """
     st.subheader("Live A/V Monitoring")
     
+    # Process alerts from queue
+    try:
+        while True:
+            alert = alert_queue.get_nowait()
+            if alert["type"] == "self_healing":
+                st.session_state.logs.append(alert["payload"])
+                push_alert_to_chat(alert["payload"]["message"], alert_type="self_healing")
+            elif alert["type"] == "camera":
+                push_alert_to_chat(alert["payload"], alert_type="camera")
+            elif alert["type"] == "audio":
+                push_alert_to_chat(alert["payload"], alert_type="audio")
+    except queue.Empty:
+        pass
+    
     # Camera Controls
-    col_cam1, col_cam2 = st.columns([1, 2])
+    col_cam1, col_cam2, col_cam3 = st.columns([1, 1, 2])
     with col_cam1:
         camera_power = st.toggle("Camera Power", value=True)
     with col_cam2:
+        object_detection = st.toggle("Object Detection", value=False)
+        hand_tracing = st.toggle("Hand Tracing", value=False)
+        
+        viz_styles = []
+        if object_detection:
+            viz_styles = st.multiselect(
+                "Viz Style",
+                ["Bounding Box", "Label", "Filled Box", "Centroid", "Blur"],
+                default=["Bounding Box", "Label"],
+                label_visibility="collapsed"
+            )
+    with col_cam3:
         cameras = list_cameras()
         selected_camera = st.selectbox("Camera Source", cameras, index=0)
+
+    # Initialize MediaPipe Hands (Cached)
+    @st.cache_resource
+    def get_hand_tracker():
+        import mediapipe as mp
+        mp_hands = mp.solutions.hands
+        hands = mp_hands.Hands(
+            static_image_mode=False,
+            max_num_hands=2,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
+        return hands, mp.solutions.drawing_utils, mp_hands
+
+    def draw_detections(frame, detections, styles):
+        for det in detections:
+            x1, y1, x2, y2 = map(int, det['box'])
+            
+            # Ensure coordinates are within frame bounds
+            h, w, _ = frame.shape
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w, x2), min(h, y2)
+
+            # Blur (Privacy)
+            if "Blur" in styles:
+                roi = frame[y1:y2, x1:x2]
+                if roi.size > 0:
+                    roi = cv2.GaussianBlur(roi, (51, 51), 0)
+                    frame[y1:y2, x1:x2] = roi
+
+            # Filled Box
+            if "Filled Box" in styles:
+                overlay = frame.copy()
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 120, 255), -1)
+                alpha = 0.3
+                cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
+            # Bounding Box
+            if "Bounding Box" in styles:
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            # Centroid
+            if "Centroid" in styles:
+                cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
+
+            # Label
+            if "Label" in styles:
+                label = f"{det['label']} {det['score']}"
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # Camera Feed
     if camera_power:
@@ -307,11 +387,49 @@ def render_av_monitoring():
                 # To read image file buffer with OpenCV:
                 bytes_data = img_file_buffer.getvalue()
                 cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-                # Display processed frame if needed, or just let st.camera_input handle the preview
-                # For consistency, we could process it here
+                
+                if object_detection:
+                    detections = detect_objects_in_frame(cv2_img)
+                    draw_detections(cv2_img, detections, viz_styles)
+                
+                if hand_tracing:
+                    hands, mp_drawing, mp_hands = get_hand_tracker()
+                    # MediaPipe needs RGB
+                    img_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+                    results = hands.process(img_rgb)
+                    if results.multi_hand_landmarks:
+                        for hand_landmarks in results.multi_hand_landmarks:
+                            mp_drawing.draw_landmarks(
+                                cv2_img, 
+                                hand_landmarks, 
+                                mp_hands.HAND_CONNECTIONS
+                            )
+
+                # Display processed frame
+                frame_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+                st.image(frame_rgb, channels="RGB", use_column_width=True)
+
         else:
             # Backend/Simulated Camera
             frame = get_camera_frame(selected_camera)
+            
+            if object_detection:
+                detections = detect_objects_in_frame(frame)
+                draw_detections(frame, detections, viz_styles)
+
+            if hand_tracing:
+                hands, mp_drawing, mp_hands = get_hand_tracker()
+                # MediaPipe needs RGB
+                img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = hands.process(img_rgb)
+                if results.multi_hand_landmarks:
+                    for hand_landmarks in results.multi_hand_landmarks:
+                        mp_drawing.draw_landmarks(
+                            frame, 
+                            hand_landmarks, 
+                            mp_hands.HAND_CONNECTIONS
+                        )
+
             # Convert BGR to RGB for Streamlit
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             st.image(frame_rgb, caption=f"Live Feed: {selected_camera}", use_column_width=True)

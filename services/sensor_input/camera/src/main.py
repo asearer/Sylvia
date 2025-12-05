@@ -71,6 +71,12 @@ def get_activity_alerts():
     """
     return None
 
+def detect_objects_in_frame(frame):
+    """
+    Detect objects in the given frame using the global recognizer.
+    """
+    return _recognizer.detect_objects(frame)
+
 def record_clip():
     """
     Record a clip.
