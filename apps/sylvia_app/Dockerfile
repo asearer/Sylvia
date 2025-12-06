@@ -1,11 +1,18 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install system dependencies for opencv
+# Install system dependencies for opencv and streamlit-webrtc (av)
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
     python3-tk \
+    libavdevice-dev \
+    libavfilter-dev \
+    libopus-dev \
+    libvpx-dev \
+    pkg-config \
+    libsrtp2-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements for the app
