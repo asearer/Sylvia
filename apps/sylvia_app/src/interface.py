@@ -30,6 +30,7 @@ import cv2
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
 # Import Sylvia service modules
 from services.personality_engine.src.engine import process_message, set_llm_provider, get_analytics_data, set_system_prompt
@@ -380,34 +381,43 @@ def render_av_monitoring():
 
     # Camera Feed
     if camera_power:
-        if selected_camera == "Browser Camera":
-            # Use Streamlit's native camera input for browser access
-            img_file_buffer = st.camera_input("Live Feed (Browser)")
-            if img_file_buffer is not None:
-                # To read image file buffer with OpenCV:
-                bytes_data = img_file_buffer.getvalue()
-                cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-                
-                if object_detection:
-                    detections = detect_objects_in_frame(cv2_img)
-                    draw_detections(cv2_img, detections, viz_styles)
-                
-                if hand_tracing:
-                    hands, mp_drawing, mp_hands = get_hand_tracker()
-                    # MediaPipe needs RGB
-                    img_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-                    results = hands.process(img_rgb)
-                    if results.multi_hand_landmarks:
-                        for hand_landmarks in results.multi_hand_landmarks:
-                            mp_drawing.draw_landmarks(
-                                cv2_img, 
-                                hand_landmarks, 
-                                mp_hands.HAND_CONNECTIONS
-                            )
+        if selected_camera == "Client Camera (Browser)":
+            st.caption("Note: Browser camera requires HTTPS if accessing remotely. If you are on HTTP, this may fail.")
+            
+            # Simple Video Transformer for WebRTC
+            class VideoProcessor(VideoTransformerBase):
+                def __init__(self):
+                    self.object_detection = False
+                    self.hand_tracing = False
+                    self.viz_styles = []
 
-                # Display processed frame
-                frame_rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-                st.image(frame_rgb, channels="RGB", use_column_width=True)
+                def transform(self, frame):
+                    img = frame.to_ndarray(format="bgr24")
+                    
+                    if self.object_detection:
+                        detections = detect_objects_in_frame(img)
+                        draw_detections(img, detections, self.viz_styles)
+                    
+                    # Note: Hand tracking (Mediapipe) might be too heavy for this thread or require a loop
+                    # Skipping hand tracking in WebRTC for optimization, or implementing simpler version
+                    
+                    return img
+
+            # WebRTC Streamer
+            ctx = webrtc_streamer(
+                key="client-cam", 
+                video_processor_factory=VideoProcessor,
+                rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+                media_stream_constraints={"video": True, "audio": False}
+            )
+
+            # Update processor settings based on UI
+            if ctx.video_processor:
+                ctx.video_processor.object_detection = object_detection
+                ctx.video_processor.hand_tracing = hand_tracing
+                ctx.video_processor.viz_styles = viz_styles
+            else:
+                st.info("Waiting for client camera permission...")
 
         else:
             # Backend/Simulated Camera
@@ -442,16 +452,16 @@ def render_av_monitoring():
     # Audio Controls
     col_audio1, col_audio2 = st.columns([1, 2])
     with col_audio1:
-        audio_source = st.selectbox("Audio Source", ["Simulated", "Browser Microphone"], index=0)
+        audio_source = st.selectbox("Audio Source", ["Simulated", "Client Microphone (Browser)"], index=0)
     
     audio_data = None
-    if audio_source == "Browser Microphone":
+    if audio_source == "Client Microphone (Browser)":
         audio_input = st.audio_input("Record Audio")
         if audio_input:
             audio_data = audio_input.getvalue()
     
     # Get visualizer data (real or simulated)
-    chart_data = get_audio_visualizer_data(audio_data if audio_source == "Browser Microphone" else None)
+    chart_data = get_audio_visualizer_data(audio_data if audio_source == "Client Microphone (Browser)" else None)
     
     st.bar_chart(chart_data, height=150)
     

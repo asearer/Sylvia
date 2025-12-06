@@ -62,19 +62,30 @@ st.markdown("""
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
+    /* ---------------------------------------------------------------------- */
+    /* Component Styling (Desktop / Default) */
+    /* ---------------------------------------------------------------------- */
+
     /* Remove rounded corners from buttons and inputs */
     .stButton > button {
-        border-radius: 0px;
+        border-radius: 4px; /* Slight roundness for modernization */
         border: 1px solid #3e3e42;
         background-color: #0e639c;
         color: white;
+        transition: background-color 0.2s, transform 0.1s;
     }
     .stButton > button:hover {
         background-color: #1177bb;
         border-color: #3e3e42;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
+    .stButton > button:active {
+        transform: translateY(0px);
+    }
+
     .stTextInput > div > div > input {
-        border-radius: 0px;
+        border-radius: 4px;
         background-color: #3c3c3c;
         color: #cccccc;
         border: 1px solid #3c3c3c;
@@ -91,7 +102,7 @@ st.markdown("""
         background-color: #252526;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 0px;
+        border-radius: 4px 4px 0 0;
         background-color: #2d2d2d;
         color: #969696;
         padding: 4px 16px;
@@ -99,13 +110,78 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         background-color: #1e1e1e;
         color: white;
-        border-top: 1px solid #007acc;
+        border-top: 2px solid #007acc;
     }
     
-    /* Reduce padding for a denser "IDE" feel */
+    /* Main container density */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* Responsive / Adaptive Overrides */
+    /* ---------------------------------------------------------------------- */
+
+    /* Mobile Devices (Max Width: 768px) */
+    @media (max-width: 768px) {
+        
+        /* CRITICAL: Turn all horizontal column layouts into vertical stacks */
+        [data-testid="stHorizontalBlock"] {
+            flex-direction: column !important;
+        }
+
+        /* Force columns to stack vertically */
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 auto !important;
+            min-width: 100% !important;
+        }
+
+        /* Improve touch targets */
+        .stButton > button {
+            padding: 0.75rem 1rem !important;
+            font-size: 1rem !important;
+            width: 100% !important; /* Full width buttons on mobile */
+            margin-bottom: 0.5rem !important;
+        }
+
+        .stTextInput > div > div > input {
+            padding: 0.75rem !important;
+            font-size: 1rem !important;
+        }
+
+        /* Adjust blocking for mobile readability */
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1rem !important;
+            max-width: 100% !important;
+        }
+
+        /* Sidebar adjustment (if not collapsed) */
+        section[data-testid="stSidebar"] {
+            width: 100% !important; 
+            min-width: 100% !important;
+        }
+
+        /* Make tabs scrollable or stack nicely */
+        .stTabs [data-baseweb="tab-list"] {
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            padding-bottom: 5px !important;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 8px 12px !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Adjust images to be responsive */
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)

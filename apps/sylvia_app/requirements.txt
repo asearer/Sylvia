@@ -15,4 +15,5 @@ pillow
 datasets
 soundfile
 sentencepiece
-mediapipe
+# mediapipe
+streamlit-webrtc

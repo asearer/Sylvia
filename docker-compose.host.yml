@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  sylvia-app:
+    network_mode: "host"
+  personality-engine:
+    network_mode: "host"
+    command: ["streamlit", "run", "src/dashboard.py", "--server.port=5001", "--server.address=0.0.0.0"]
+  playground:
+    network_mode: "host"
+  classifier:
+    network_mode: "host"
+  communication:
+    network_mode: "host"
+  dashboard:
+    network_mode: "host"

@@ -21,7 +21,7 @@ def list_cameras():
     """
     List available camera sources.
     """
-    return ["Browser Camera", "Device 0 (Backend)", "Simulated"]
+    return ["Client Camera (Browser)", "Server Camera (Backend)", "Simulated"]
 
 def get_camera_frame(source_name: str = "Simulated"):
     """
@@ -29,7 +29,7 @@ def get_camera_frame(source_name: str = "Simulated"):
     """
     global _cap
     
-    if source_name == "Device 0 (Backend)":
+    if source_name == "Server Camera (Backend)":
         if _cap is None or not _cap.isOpened():
             _cap = cv2.VideoCapture(0)
         
