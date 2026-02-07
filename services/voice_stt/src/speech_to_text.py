@@ -6,7 +6,7 @@ Currently defaults to a Mock provider, but can be extended for Whisper, Google C
 """
 
 import logging
-from services.voice_assistant.src.stt_provider import STTProvider
+from services.voice_stt.src.stt_provider import STTProvider
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class WhisperSTT(STTProvider):
 # -------------------------------------------------------------------------
 
 # Default instance
-_stt_provider: STTProvider = WhisperSTT()
+_stt_provider: STTProvider = MockSTT()
 
 def set_stt_provider(provider: STTProvider):
     """

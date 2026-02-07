@@ -1,34 +1,16 @@
-FROM python:3.11-slim
+
+FROM python:3.10-slim
+
 WORKDIR /app
 
-# Install system dependencies for opencv and streamlit-webrtc (av)
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    python3-tk \
-    libavdevice-dev \
-    libavfilter-dev \
-    libopus-dev \
-    libvpx-dev \
-    pkg-config \
-    libsrtp2-dev \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN pip install --no-cache-dir streamlit redis
 
-# Copy requirements for the app
-COPY apps/sylvia_app/requirements.txt ./requirements.txt
+# Copy source code
+COPY libs /app/libs
+COPY apps/sylvia_app /app/apps/sylvia_app
 
-# Install CPU-only PyTorch, TorchVision, and TorchAudio first to save space (avoiding CUDA binaries)
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the app and services (since app imports services)
-COPY apps/sylvia_app/src ./src
-COPY services ./services
-
-# Ensure python path includes root
+# Set PYTHONPATH
 ENV PYTHONPATH=/app
 
-EXPOSE 5000
-CMD ["streamlit", "run", "src/main.py", "--server.port=5000", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "apps/sylvia_app/src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]

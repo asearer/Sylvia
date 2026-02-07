@@ -17,3 +17,12 @@ websockets
 # Testing
 pytest
 pytest-asyncio
+
+# IPC
+redis
+
+# Audio
+SpeechRecognition
+pyaudio
+soundfile
+numpy

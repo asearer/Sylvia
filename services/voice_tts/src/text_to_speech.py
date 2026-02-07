@@ -6,7 +6,7 @@ Currently defaults to a Mock provider, but can be extended for Coqui, Google Clo
 """
 
 import logging
-from services.voice_assistant.src.tts_provider import TTSProvider
+from services.voice_tts.src.tts_provider import TTSProvider
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class SpeechT5TTS(TTSProvider):
 # -------------------------------------------------------------------------
 
 # Default instance
-_tts_provider: TTSProvider = SpeechT5TTS()
+_tts_provider: TTSProvider = MockTTS()
 
 def set_tts_provider(provider: TTSProvider):
     """

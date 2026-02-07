@@ -1,67 +1,84 @@
-version: "3.8"
+version: '3.8'
 
 services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  agent-core:
+    build:
+      context: .
+      dockerfile: services/agent_core/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./services/agent_core:/app/services/agent_core
+      - ./libs:/app/libs
+
+  voice-stt:
+    build:
+      context: .
+      dockerfile: services/voice_stt/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Attempt to use host audio device (Linux only usually)
+      # For Mac, this is tricky and might not work without PulseAudio network setup.
+      # The code falls back to simulation mode if mic fails.
+    volumes:
+      - ./services/voice_stt:/app/services/voice_stt
+      - ./libs:/app/libs
+    devices:
+      - "/dev/snd:/dev/snd" # For Linux/Ubuntu host
+
+  voice-tts:
+    build:
+      context: .
+      dockerfile: services/voice_tts/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./services/voice_tts:/app/services/voice_tts
+      - ./libs:/app/libs
+    devices:
+      - "/dev/snd:/dev/snd" # For Linux/Ubuntu host
+
+  avatar-bridge:
+    build:
+      context: .
+      dockerfile: services/avatar_bridge/Dockerfile
+    depends_on:
+      - redis
+    ports:
+      - "8765:8765"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./services/avatar_bridge:/app/services/avatar_bridge
+      - ./libs:/app/libs
+
   sylvia-app:
     build:
       context: .
       dockerfile: apps/sylvia_app/Dockerfile
-    container_name: sylvia-app
     ports:
-      - "5000:5000"
+      - "8501:8501"
     depends_on:
-      - personality-engine
-      - communication
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
-      - ./apps/sylvia_app/src:/app/src
-      - ./services:/app/services
-
-  personality-engine:
-    build: ./services/personality_engine
-    container_name: personality-engine
-    ports:
-      - "5001:5001"
-
-  playground:
-    build: services/playground
-    container_name: playground-app
-    ports:
-      - "5002:5002"
-    profiles: ["experimental"]  # only run if you opt-in
-
-  classifier:
-    build: services/classifier
-    container_name: classifier-app
-    ports:
-      - "5003:5003"
-    environment:
-      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
-      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
-      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
-      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
-    profiles: ["experimental"]  # only run if you opt-in
-
-  communication:
-    build: ./services/communication
-    container_name: communication
-    environment:
-      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
-      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
-      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
-      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
-
-  dashboard:
-    image: jupyter/base-notebook
-    container_name: dashboard-notebook
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./experiments/dashboards:/home/jovyan/work:ro
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - MATRIX_HOMESERVER=${MATRIX_HOMESERVER}
-      - MATRIX_BOT_USER=${MATRIX_BOT_USER}
-      - MATRIX_BOT_PASSWORD=${MATRIX_BOT_PASSWORD}
-      - MATRIX_ROOM_ID=${MATRIX_ROOM_ID}
-    command: start-notebook.sh --NotebookApp.token=''
-    profiles: ["experimental"]
-
+      - ./apps/sylvia_app:/app/apps/sylvia_app
+      - ./libs:/app/libs
