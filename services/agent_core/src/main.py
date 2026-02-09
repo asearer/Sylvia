@@ -19,6 +19,33 @@ def main():
     
     messenger = Messenger(channel="sylvia:events")
     processor = CommandProcessor()
+
+    # --- Command Callbacks ---
+    def hello_callback():
+        import random
+        greetings = ["Hello there!", "Hi! I am online.", "Greetings, user.", "Hello! How can I help?"]
+        return random.choice(greetings)
+
+    def status_callback():
+        # In a real system, checking other services via health pings
+        return "All systems nominal. Agent Core, Voice Services, and Avatar Bridge are active."
+
+    def time_callback():
+        from datetime import datetime
+        now = datetime.now().strftime("%I:%M %p")
+        return f"It is currently {now}."
+
+    def sing_callback():
+        return "La la la! I am a digital entity, but I can still hold a tune. Do re mi fa so la ti do!"
+
+    # --- Register Commands ---
+    processor.register_command("hello", hello_callback)
+    processor.register_command("hi", hello_callback)
+    processor.register_command("status", status_callback)
+    processor.register_command("time", time_callback)
+    processor.register_command("sing", sing_callback)
+    
+    logger.info("Voice commands registered: hello, status, time, sing")
     
     def on_message(event_type, payload):
         if event_type == "user_input":
@@ -31,13 +58,11 @@ def main():
             command_result = processor.process_command(payload)
             
             response_text = ""
-            if command_result:
-                response_text = f"Command executed: {command_result}"
-                # For non-string returns, cast to str
-                if not isinstance(command_result, str):
-                   response_text = f"Command executed. Result: {command_result}" 
+            if command_result and command_result.get("executed"):
+                response_text = command_result.get("response")
             else:
-                # Fallback to chat
+                # Fallback to chat / LLM
+                # For now, just echo if not a command
                 response_text = f"I heard you say: {payload}"
                 
             logger.info(f"Agent Response: {response_text}")
