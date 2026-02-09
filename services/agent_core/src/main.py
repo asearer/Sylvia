@@ -19,6 +19,14 @@ def main():
     
     messenger = Messenger(channel="sylvia:events")
     processor = CommandProcessor()
+    
+    # --- LLM Setup ---
+    from services.agent_core.src.llm.registry import ModelRegistry
+    from services.agent_core.src.llm.router import LLMRouter
+
+    registry = ModelRegistry()  # Defaults to /models
+    registry.scan_models()
+    llm_router = LLMRouter(registry)
 
     # --- Command Callbacks ---
     def hello_callback():
@@ -27,8 +35,8 @@ def main():
         return random.choice(greetings)
 
     def status_callback():
-        # In a real system, checking other services via health pings
-        return "All systems nominal. Agent Core, Voice Services, and Avatar Bridge are active."
+        llm_status = llm_router.get_status()
+        return f"All systems nominal. {llm_status}"
 
     def time_callback():
         from datetime import datetime
@@ -38,22 +46,46 @@ def main():
     def sing_callback():
         return "La la la! I am a digital entity, but I can still hold a tune. Do re mi fa so la ti do!"
 
+    def list_models_callback():
+        models = registry.list_models()
+        if not models:
+            return "No local models found in /models directory."
+        return "Available models: " + ", ".join([m["name"] for m in models])
+
+    def switch_model_callback(target_model: str):
+        # This callback needs args, but our processor might not support args yet.
+        # For now, let's assume the processor won't call this directly with args from "switch to X"
+        # We'll handle "switch to" logic in the main loop or update processor later.
+        # Let's just expose a status check for now or handle it via router directly.
+        pass
+        
+    def current_model_callback():
+        return llm_router.get_status()
+
     # --- Register Commands ---
     processor.register_command("hello", hello_callback)
     processor.register_command("hi", hello_callback)
     processor.register_command("status", status_callback)
     processor.register_command("time", time_callback)
     processor.register_command("sing", sing_callback)
+    processor.register_command("list models", list_models_callback)
+    processor.register_command("current model", current_model_callback)
     
-    logger.info("Voice commands registered: hello, status, time, sing")
+    logger.info("Voice commands registered: hello, status, time, sing, list models, current model")
     
     def on_message(event_type, payload):
         if event_type == "user_input":
             logger.info(f"Processing user input: {payload}")
             
-            # Simple keyword check / processing
-            # Real implementation would use LLM router
-            
+            # Special handling for "Switch to X" since our simple processor doesn't parse args well yet
+            if payload.lower().startswith("switch to"):
+                target = payload[9:].strip() # len("switch to") + 1
+                result = llm_router.switch_model(target)
+                response_text = result
+                logger.info(f"Agent Response: {response_text}")
+                messenger.publish("agent_response", response_text)
+                return
+
             # Try to execute as command
             command_result = processor.process_command(payload)
             
@@ -61,9 +93,13 @@ def main():
             if command_result and command_result.get("executed"):
                 response_text = command_result.get("response")
             else:
-                # Fallback to chat / LLM
-                # For now, just echo if not a command
-                response_text = f"I heard you say: {payload}"
+                # LLM Generation
+                if llm_router.active_model:
+                     logger.info("Routing to LLM...")
+                     response_text = llm_router.route(payload)
+                else:
+                    # Fallback if no LLM loaded
+                    response_text = f"I heard you say: {payload}. (No LLM loaded. Say 'List models' to see options)"
                 
             logger.info(f"Agent Response: {response_text}")
             messenger.publish("agent_response", response_text)
@@ -72,6 +108,8 @@ def main():
         messenger.subscribe(on_message)
     except KeyboardInterrupt:
         logger.info("Stopping Agent Core...")
+        if llm_router.active_model:
+            llm_router.active_model.unload()
         messenger.close()
 
 if __name__ == "__main__":

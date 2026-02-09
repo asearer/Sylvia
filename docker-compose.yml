@@ -19,6 +19,7 @@ services:
     volumes:
       - ./services/agent_core:/app/services/agent_core
       - ./libs:/app/libs
+      - ./models:/models
 
   voice-stt:
     build:
