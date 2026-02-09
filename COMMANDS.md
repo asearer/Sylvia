@@ -16,9 +16,9 @@ This document lists the available voice commands for the Sylvia system.
 
 | Command Keyword | Description | Response Type |
 | :--- | :--- | :--- |
-| **"List models"** | Lists all available local LLM models found in the `/models` directory. | List of model names |
-| **"Current model"** | Reports which LLM is currently loaded and active. | Active model name |
-| **"Switch to [name]"** | Unloads the current model and loads the specified model. | Confirmation message |
+| **"List models"** | Lists all available local LLM models with their **Safety Profile**. | List of models + [Uncensored/Guarded] tags |
+| **"Current model"** | Reports active model and **Safe Mode** status. | Active model + Safe Mode (ON/OFF) |
+| **"Switch to [name]"** | Hot-swaps the active model. Blocked if unsafe in Safe Mode. | Confirmation or Security Alert |
 
 ## Usage
 Speak these commands clearly into the microphone (if Voice STT is active) or type them into the **Dashboard Chat**.

@@ -16,6 +16,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - SAFE_MODE=true # Enforce safety protocols
     volumes:
       - ./services/agent_core:/app/services/agent_core
       - ./libs:/app/libs

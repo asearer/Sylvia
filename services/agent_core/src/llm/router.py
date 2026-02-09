@@ -12,11 +12,20 @@ from .registry import ModelRegistry
 
 logger = logging.getLogger("agent-core.llm.router")
 
+import os
+from .models import ModelProfile, SafetyProfile
+
+logger = logging.getLogger("agent-core.llm.router")
+
 class LLMRouter:
     def __init__(self, registry: ModelRegistry):
         self.registry = registry
         self.active_model: Optional[BaseLLM] = None
         self.active_model_name: Optional[str] = None
+        
+        # Security Policy: Default to SAFE (True)
+        self.safe_mode = os.getenv("SAFE_MODE", "True").lower() == "true"
+        logger.info(f"LLM Router initialized. SAFE_MODE={self.safe_mode}")
 
     def route(self, prompt: str, context: Optional[Dict] = None) -> str:
         """
@@ -36,42 +45,47 @@ class LLMRouter:
         Switch the active model. Unloads current, loads new.
         """
         # 1. Check registry
-        model_info = self.registry.get_model_info(model_name)
-        if not model_info:
+        model_profile: Optional[ModelProfile] = self.registry.get_model_info(model_name)
+        if not model_profile:
             # Fuzzy match attempt
             available = self.registry.list_models()
             for m in available:
-                if model_name.lower() in m["name"].lower():
-                    model_info = self.registry.get_model_info(m["name"])
-                    model_name = m["name"]
+                if model_name.lower() in m.display_name.lower():
+                    model_profile = m
+                    model_name = m.display_name
                     break
             
-            if not model_info:
-                return f"Model '{model_name}' not found. Available: {', '.join(self.registry.available_models.keys())}"
+            if not model_profile:
+                return f"Model '{model_name}' not found."
 
-        # 2. Unload current
+        # 2. Safety Check
+        if self.safe_mode and model_profile.safety_profile == "uncensored":
+            logger.warning(f"Blocked attempt to load uncensored model '{model_name}' in SAFE_MODE")
+            return f"Security Alert: Cannot load uncensored model '{model_name}' because SAFE_MODE is enabled."
+
+        # 3. Unload current
         if self.active_model:
             logger.info("Unloading current model...")
             self.active_model.unload()
             self.active_model = None
             self.active_model_name = None
 
-        # 3. Load new
+        # 4. Load new
         try:
-            logger.info(f"Initializing new model: {model_name}")
-            if model_info["type"] == "local":
+            logger.info(f"Initializing new model: {model_name} [{model_profile.safety_profile}]")
+            if model_profile.inference_type == "local":
                 # Config can be expanded later
                 config = {
                     "n_ctx": 2048, 
                     "n_threads": 4, # TODO: Make configurable via env
                     "temperature": 0.7
                 }
-                new_model = LocalLLM(model_id=model_info["id"], config=config)
+                new_model = LocalLLM(profile=model_profile, config=config)
                 
                 if new_model.load():
                     self.active_model = new_model
                     self.active_model_name = model_name
-                    return f"Successfully switched to {model_name}."
+                    return f"Successfully switched to {model_name}. (Safety: {model_profile.safety_profile})"
                 else:
                     return f"Failed to load model {model_name}. Check logs."
             else:

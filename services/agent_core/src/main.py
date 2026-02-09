@@ -50,17 +50,19 @@ def main():
         models = registry.list_models()
         if not models:
             return "No local models found in /models directory."
-        return "Available models: " + ", ".join([m["name"] for m in models])
+        
+        response = "Available models:\n"
+        for m in models:
+            response += f"- {m.display_name} [{m.safety_profile}]\n"
+        return response.strip()
 
     def switch_model_callback(target_model: str):
-        # This callback needs args, but our processor might not support args yet.
-        # For now, let's assume the processor won't call this directly with args from "switch to X"
-        # We'll handle "switch to" logic in the main loop or update processor later.
-        # Let's just expose a status check for now or handle it via router directly.
         pass
         
     def current_model_callback():
-        return llm_router.get_status()
+        status = llm_router.get_status()
+        safe_mode = "ON" if llm_router.safe_mode else "OFF"
+        return f"{status} | Safe Mode: {safe_mode}"
 
     # --- Register Commands ---
     processor.register_command("hello", hello_callback)

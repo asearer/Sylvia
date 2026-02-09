@@ -14,17 +14,18 @@ except ImportError:
     Llama = None
 
 from .base import BaseLLM
+from .models import ModelProfile
 
 logger = logging.getLogger("agent-core.llm.local")
 
 class LocalLLM(BaseLLM):
-    def __init__(self, model_id: str, config: Optional[Dict] = None):
-        super().__init__(model_id, config)
+    def __init__(self, profile: ModelProfile, config: Optional[Dict] = None):
+        super().__init__(profile, config)
         self._llm = None
         # Default config optimized for CPU (as per user constraints)
         self.context_window = self.config.get("n_ctx", 2048)
         self.n_threads = self.config.get("n_threads", 4) # Adjust based on CPU cores
-        self.model_path = os.path.join("/models", model_id)
+        self.model_path = os.path.join("/models", profile.id)
 
     def load(self) -> bool:
         if self._llm:

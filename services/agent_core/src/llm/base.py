@@ -6,17 +6,19 @@ Defines the contract that all LLM adapters (Local, Cloud) must implement.
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
+from .models import ModelProfile
 
 class BaseLLM(ABC):
-    def __init__(self, model_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, profile: ModelProfile, config: Optional[Dict[str, Any]] = None):
         """
         Initialize the LLM adapter.
         
         Args:
-            model_id (str): Unique identifier for the model (e.g. filename or API model name)
+            profile (ModelProfile): Metadata and safety profile for this model.
             config (dict): Configuration parameters (context_window, temp, etc.)
         """
-        self.model_id = model_id
+        self.profile = profile
+        self.model_id = profile.id
         self.config = config or {}
         
     @abstractmethod
@@ -63,6 +65,8 @@ class BaseLLM(ABC):
         """Return metadata about this adapter."""
         return {
             "model_id": self.model_id,
+            "display_name": self.profile.display_name,
+            "safety_profile": self.profile.safety_profile,
             "type": self.__class__.__name__,
             "config": self.config
         }
